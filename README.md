@@ -8,6 +8,6 @@ A [Parinfer] package for [Atom].
 
 [ISC License]
 
-[Parinfer]:https://github.com/shaunlebron/parinfer
+[Parinfer]:http://shaunlebron.github.io/parinfer/
 [Atom]:https://atom.io/
 [ISC License]:LICENSE.md
