@@ -4,10 +4,6 @@
       {
         "label": "Toggle Parinfer",
         "command": "parinfer:toggle"
-      },
-      {
-        "label": "Parinfer: Run",
-        "command": "parinfer:run"
       }
     ]
   },
@@ -21,10 +17,6 @@
             {
               "label": "Toggle",
               "command": "parinfer:toggle"
-            },
-            {
-              "label": "Run!",
-              "command": "parinfer:run"
             }
           ]
         }
