@@ -4,5 +4,6 @@ npm-debug.log
 # ignore diff files
 *.diff
 
-# I don't want to accidentally commit this file
-example.cljs
+# I don't want to accidentally commit my test files
+example1.cljs
+example2.cljs
