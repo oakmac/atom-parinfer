@@ -1,12 +1,4 @@
 {
-  "context-menu": {
-    "atom-text-editor": [
-      {
-        "label": "Toggle Parinfer",
-        "command": "parinfer:toggle"
-      }
-    ]
-  },
   "menu": [
     {
       "label": "Packages",
@@ -15,20 +7,8 @@
           "label": "Parinfer",
           "submenu": [
             {
-              "label": "Turn On",
-              "command": "parinfer:enable"
-            },
-            {
-              "label": "Turn Off",
-              "command": "parinfer:disable"
-            },
-            {
               "label": "Edit File Extensions",
               "command": "parinfer:editFileExtensions"
-            },
-            {
-              "label": "Process Entire File",
-              "command": "parinfer:processEntireFile"
             }
           ]
         }

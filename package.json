@@ -3,9 +3,8 @@
   "main": "./lib/atom-parinfer.js",
   "version": "0.0.1",
   "description": "Parinfer for Atom",
-  "keywords": [
-  ],
-  "repository": "https://github.com/atom/atom-parinfer",
+  "keywords": ["parinfer", "paredit", "Clojure", "ClojureScript", "CLJS", "Lisp"],
+  "repository": "https://github.com/oakmac/atom-parinfer",
   "license": "ISC",
   "engines": {
     "atom": ">=1.0.0 <2.0.0"

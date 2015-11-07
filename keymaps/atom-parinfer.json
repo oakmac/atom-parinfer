@@ -1,5 +1,0 @@
-{
-  "atom-text-editor": {
-    "cmd-h": "parinfer:test"
-  }
-}
