@@ -15,8 +15,20 @@
           "label": "Parinfer",
           "submenu": [
             {
-              "label": "Toggle",
-              "command": "parinfer:toggle"
+              "label": "Turn On",
+              "command": "parinfer:enable"
+            },
+            {
+              "label": "Turn Off",
+              "command": "parinfer:disable"
+            },
+            {
+              "label": "Edit File Extensions",
+              "command": "parinfer:editFileExtensions"
+            },
+            {
+              "label": "Process Entire File",
+              "command": "parinfer:processEntireFile"
             }
           ]
         }

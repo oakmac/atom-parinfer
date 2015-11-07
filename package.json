@@ -5,14 +5,12 @@
   "description": "Parinfer for Atom",
   "keywords": [
   ],
-  "activationCommands": {
-    "atom-workspace": "parinfer:toggle"
-  },
   "repository": "https://github.com/atom/atom-parinfer",
   "license": "ISC",
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
   },
   "dependencies": {
+    "fs-plus": "2.8.1"
   }
 }
