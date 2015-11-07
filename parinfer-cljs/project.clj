@@ -12,12 +12,13 @@
 
   :cljsbuild
     {:builds
-      [{:id "lib"
-        :source-paths ["src"]
-        :compiler {:output-to "../lib/parinfer.js"
-                   :optimizations :simple
-                   :language-in :ecmascript5
-                   :language-out :ecmascript5
-                   :target :nodejs
-                   :hashbang false
-                   :pretty-print true}}]})
+      {:lib
+        {:source-paths ["src"]
+         :compiler
+           {:output-to "../lib/parinfer.js"
+            :optimizations :simple
+            :language-in :ecmascript5
+            :language-out :ecmascript5
+            :target :nodejs
+            :hashbang false
+            :pretty-print true}}}})

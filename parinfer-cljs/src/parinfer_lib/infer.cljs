@@ -484,6 +484,9 @@
 ;; JS API - C. Oakman added
 ;;------------------------------------------------------------------------------
 
+;; noop - needed for :nodejs CLJS build
+(set! *main-cli-fn* (fn [] nil))
+
 (defn- js-format-text [txt js-point]
   (let [clj-opts {:cursor-line (aget js-point "row")
                   :cursor-x (aget js-point "column")}
@@ -492,7 +495,6 @@
       (:text result)
       false)))
 
-(goog.exportSymbol "parinfer.formatText" js-format-text)
-
-;; noop - needed for :nodejs CLJS build
-(set! *main-cli-fn* (fn [] nil))
+(when js/module
+  (set! js/module.exports
+    (js-obj "formatText" js-format-text)))
