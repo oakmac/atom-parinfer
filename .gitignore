@@ -1,8 +1,8 @@
 .DS_Store
 npm-debug.log
-node_modules
 
 # ignore diff files
 *.diff
 
+# I don't want to accidentally commit this file
 example.cljs
