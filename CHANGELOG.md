@@ -1,3 +1,4 @@
 ## 0.1.0 - First Release
-* Every feature added
-* Every bug fixed
+* Initial release!
+* Parinfer now usable in a major text editor. One small step for parenthesis,
+  one giant leap for LISP ;)
