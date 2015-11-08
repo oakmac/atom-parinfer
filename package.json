@@ -17,6 +17,7 @@
     "atom": ">=1.0.0 <2.0.0"
   },
   "dependencies": {
-    "fs-plus": "2.8.1"
+    "fs-plus": "2.8.1",
+    "underscore": "1.8.3"
   }
 }
