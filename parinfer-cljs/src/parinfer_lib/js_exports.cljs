@@ -19,13 +19,13 @@
 (defn- js-format-indentation
   ([txt] (js-format-indentation txt nil))
   ([txt js-cursor]
-    (let [clj-opts (if js-cursor {:cursor-line (aget js-cursor "row")
-                                  :cursor-x (aget js-cursor "column")}
-                                 {})
-          result (prep/format-text txt clj-opts)]
-      (if (:valid? result)
-        (:text result)
-        false))))
+   (let [clj-opts (if js-cursor {:cursor-line (aget js-cursor "row")
+                                  :cursor-x (aget js-cursor "column")
+                                 {}})
+         result (prep/format-text txt clj-opts)]
+     (if (:valid? result)
+       (:text result)
+       false))))
 
 ;;-----------------------------------------------------------------------------
 ;; Module Export
