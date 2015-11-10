@@ -1,6 +1,6 @@
 (ns parinfer-lib.infer
-  "Corrects parens based on indentation.
-  (used while editing a file)"
+  "Infer paren code structure based on indentation.
+   Used while editing a file a LISP file."
   (:require
     [clojure.string :refer [join]]
     [parinfer-lib.string :refer [insert-string
@@ -479,22 +479,3 @@
      {:text out-text
       :valid? (:valid? state)
       :state state})))
-
-;;------------------------------------------------------------------------------
-;; JS API - C. Oakman added
-;;------------------------------------------------------------------------------
-
-;; noop - needed for :nodejs CLJS build
-(set! *main-cli-fn* (fn [] nil))
-
-(defn- js-format-text [txt js-point]
-  (let [clj-opts {:cursor-line (aget js-point "row")
-                  :cursor-x (aget js-point "column")}
-        result (format-text txt clj-opts)]
-    (if (:valid? result)
-      (:text result)
-      false)))
-
-(when js/module
-  (set! js/module.exports
-    (js-obj "formatText" js-format-text)))
