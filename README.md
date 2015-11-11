@@ -15,7 +15,7 @@ Parinfer will take care of the rest.
 ## How to use this Extension
 
 1. Install [Atom]
-1. In Atom, pull up the Settings tab by pressing `Ctrl + ,` or using the main
+1. In Atom, pull up the Settings tab by pressing `Ctrl + ,` (`Cmd + ,` on mac) or using the main
    menu Edit --> Preferences
 1. Click on the Install tab
 1. Search for "parinfer" and find this package
