@@ -9,6 +9,14 @@
             {
               "label": "Edit File Extensions",
               "command": "parinfer:editFileExtensions"
+            },
+            {
+              "label": "Toggle Mode",
+              "command": "parinfer:toggleMode"
+            },
+            {
+              "label": "Disable",
+              "command": "parinfer:disable"
             }
           ]
         }
