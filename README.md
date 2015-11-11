@@ -18,7 +18,7 @@ Parinfer will take care of the rest.
 1. In Atom, pull up the Settings tab by pressing `Ctrl + ,` or using the main
    menu Edit --> Preferences
 1. Click on the Install tab
-1. Search for "parinfer"
+1. Search for "parinfer" and find this package
 1. Press the Install button :)
 
 Once the package has been installed, it will automatically load in the
@@ -54,7 +54,6 @@ Future features include:
 * Toggle Parinfer on/off ([Issue #3](https://github.com/oakmac/atom-parinfer/issues/3))
 * JSHint-like comments to automatically "turn on" Parinfer for files ([Issue #5](https://github.com/oakmac/atom-parinfer/issues/5))
 * JSHint-like comments to tell Parinfer to ignore sections of your code ([Issue #6](https://github.com/oakmac/atom-parinfer/issues/6))
-* A command to process an entire file and set indentation automatically from the code structure, i.e. [Paren Mode] ([Issue #8](https://github.com/oakmac/atom-parinfer/issues/8))
 
 ## License
 
