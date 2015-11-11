@@ -25,6 +25,11 @@ Once the package has been installed, it will automatically load in the
 background when you open Atom and watch for file extensions found in a config
 file. The default file extensions are: `.clj` `.cljs` `.cljc`
 
+Use hotkey `Ctrl + (` to turn Parinfer on and toggle between Indent Mode and
+Paren Mode.
+
+Use hotkey `Ctrl + )` to disable Pariner.
+
 You can edit the file extension config by going to Packages --> Parinfer -->
 Edit File Extensions in the menu.
 
@@ -50,8 +55,6 @@ Please report bugs and feature requests in the [issues].
 
 Future features include:
 
-* Status bar notification when Parinfer is on / off ([Issue #2](https://github.com/oakmac/atom-parinfer/issues/2))
-* Toggle Parinfer on/off ([Issue #3](https://github.com/oakmac/atom-parinfer/issues/3))
 * JSHint-like comments to automatically "turn on" Parinfer for files ([Issue #5](https://github.com/oakmac/atom-parinfer/issues/5))
 * JSHint-like comments to tell Parinfer to ignore sections of your code ([Issue #6](https://github.com/oakmac/atom-parinfer/issues/6))
 
