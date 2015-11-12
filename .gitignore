@@ -1,6 +1,8 @@
 .DS_Store
 npm-debug.log
 
+target/
+
 # ignore diff files
 *.diff
 
