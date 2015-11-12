@@ -1,6 +1,6 @@
 (ns atom-parinfer.core
   (:require
-    [atom-parinfer.util :refer [js-log log]]
+    [atom-parinfer.util :refer [by-id ends-with js-log log log-atom-changes qs]]
     [clojure.string :refer [join split-lines trim]]))
 
 (declare load-file-extensions!)
@@ -28,6 +28,8 @@
        (join "\n" (sort default-file-extensions))))
 
 (def file-extensions (atom default-file-extensions))
+
+;; (add-watch file-extensions :change log-atom-changes)
 
 (defn- comment-line? [l]
   (= (.charAt l 0) "#"))
@@ -64,9 +66,21 @@
 (defn- load-file-extensions! []
   (fs.readFile file-extension-file utf8 load-file-extensions-callback))
 
+;; reload their file extensions when the editor is saved
+(defn- after-file-extension-tab-opened [editor]
+  (.onDidSave editor
+    (fn []
+      (reset! file-extensions (parse-file-extension-config (.getText editor))))))
+
 ;;------------------------------------------------------------------------------
 ;; Apply Parinfer
 ;;------------------------------------------------------------------------------
+
+(def editors
+  "Keep track of all the editor windows and their Parinfer states."
+  (atom {}))
+
+;;(add-watch editors :editors log-atom-changes)
 
 (defn- apply-parinfer! [])
 
@@ -74,26 +88,62 @@
 ;; Atom Events
 ;;------------------------------------------------------------------------------
 
-(defn- hello-editor [js-editor])
+;; forget this editor
+(defn- goodbye-editor [editor]
+  (when (and editor (aget editor "id"))
+    (swap! editors dissoc (aget editor "id"))))
 
-(defn- goodbye-editor [])
+(defn- hello-editor
+  "Runs when an editor is opened."
+  [editor]
+  (let [editor-id (aget editor "id")
+        file-path (.getPath editor)
+        init-parinfer? (some #(ends-with file-path %) @file-extensions)]
+    ;; add this editor to our cache
+    (swap! editors assoc editor-id {})
+
+    ;; add the destroy event
+    (.onDidDestroy editor goodbye-editor)
+
+    ;(when init-parinfer?
+    ;  (js-log "init parinfer for this file"))
+    ))
+
+(defn- pane-changed [item]
+  ;;(js-log "TODO: pane-changed!")
+  ;; TODO: update the status bar
+  )
+
+(defn- edit-file-extensions! []
+  ;; open the file extension config file in a new tab
+  (let [js-promise (js/atom.workspace.open file-extension-file)]
+    (.then js-promise after-file-extension-tab-opened)))
+
+(defn- disable! []
+  (js-log "TODO: disable parinfer for this editor"))
+
+(defn- toggle! []
+  (js-log "TODO: toggle parinfer for this editor"))
 
 ;;------------------------------------------------------------------------------
 ;; Package-required events
 ;;------------------------------------------------------------------------------
 
-;; stupid variable for Atom's stupid CompositeDisposable system
-(def subscriptions nil)
-
-(defn- js-activate [_state]
+(defn- activate [_state]
   (js-log "Parinfer package activated.")
 
   (load-file-extensions!)
 
-  (js/atom.workspace.observeTextEditors hello-editor))
-  ;;(js/atom.workspace.onDidChangeActivePaneItem panel-changed))
+  (js/atom.workspace.observeTextEditors hello-editor)
+  (js/atom.workspace.onDidChangeActivePaneItem pane-changed)
 
-(defn- js-deactivate [])
+  ;; add package events
+  (js/atom.commands.add "atom-workspace"
+    (js-obj "parinfer:editFileExtensions" edit-file-extensions!
+            "parinfer:disable" disable!
+            "parinfer:toggleMode" toggle!)))
+
+(defn- deactivate [])
   ;; subscriptions.dispose();
 
 ;;------------------------------------------------------------------------------
@@ -103,8 +153,8 @@
 (def always-nil (constantly nil))
 
 (set! js/module.exports
-  (js-obj "activate" js-activate
-          "deactivate" js-deactivate
+  (js-obj "activate" activate
+          "deactivate" deactivate
           "serialize" always-nil))
 
 ;; noop - needed for :nodejs CLJS build
