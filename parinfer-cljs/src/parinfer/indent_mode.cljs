@@ -1,20 +1,20 @@
-(ns parinfer-lib.infer
-  "Infer paren code structure based on indentation.
-   Used while editing a file a LISP file."
+(ns parinfer.indent-mode
+  "Corrects parens based on indentation.
+  See http://shaunlebron.github.io/parinfer/#indent-mode"
   (:require
     [clojure.string :refer [join]]
-    [parinfer-lib.string :refer [insert-string
-                                 remove-str-range
-                                 get-lines]]
-    [parinfer-lib.reader :refer [push-char
-                                 whitespace?
-                                 escaping?
-                                 in-str?
-                                 in-code?
-                                 in-comment?
-                                 valid-closer?
-                                 matching-delim
-                                 closing-delim?]]))
+    [parinfer.string :refer [insert-string
+                             remove-str-range
+                             get-lines]]
+    [parinfer.reader :refer [push-char
+                             whitespace?
+                             escaping?
+                             in-str?
+                             in-code?
+                             in-comment?
+                             valid-closer?
+                             matching-delim
+                             closing-delim?]]))
 
 (def initial-state
   "An initial state of our running state."
@@ -28,7 +28,7 @@
    :track-indent? false                ;; "true" when we are looking for the first char on a line to signify indentation.
    :delim-trail {:start nil :end nil}  ;; track EOL delims since we replace them wholesale with inferred delims.
    :stack []                           ;; the delimiter stack, maps of [:x-pos :ch :indent-delta]
-   :backup []})                        ;; trailing delims that are pushed back onto the stack at EOL
+   :backup []})                          ;; trailing delims that are pushed back onto the stack at EOL
 
 (defn close-delims
   "Update the state by inferring closing delimiters.

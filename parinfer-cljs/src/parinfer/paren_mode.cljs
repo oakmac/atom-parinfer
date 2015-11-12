@@ -1,20 +1,20 @@
-(ns parinfer-lib.prep
+(ns parinfer.paren-mode
   "Corrects indentation based on parens.
-  (used to preprocess existing files)"
+  See http://shaunlebron.github.io/parinfer/#paren-mode"
   (:require
-    [parinfer-lib.reader :refer [in-str?
-                                    in-code?
-                                    whitespace?
-                                    valid-closer?
-                                    matching-delim
-                                    closing-delim?]]
-    [parinfer-lib.infer :refer [update-delim-trail
-                                   remove-delim-trail
-                                   update-insertion-pt
-                                   update-line
-                                   process-char*]]
-    [parinfer-lib.string :refer [insert-string
-                                    get-lines]]
+    [parinfer.reader :refer [in-str?
+                             in-code?
+                             whitespace?
+                             valid-closer?
+                             matching-delim
+                             closing-delim?]]
+    [parinfer.indent-mode :refer [update-delim-trail
+                                  remove-delim-trail
+                                  update-insertion-pt
+                                  update-line
+                                  process-char*]]
+    [parinfer.string :refer [insert-string
+                             get-lines]]
     [clojure.string :refer [join]]))
 
 (def initial-state
@@ -124,7 +124,7 @@
                   :cursor-in-comment? false
                   :delim-trail {:start nil :end nil}
 
-                  ;; different from process-line in parinfer.format.infer
+                  ;; different from process-line in parinfer.format.indent-mode
                   ;; (even if the stack is empty, we still have to track indentation)
                   :track-indent? (not (in-str? stack))
 

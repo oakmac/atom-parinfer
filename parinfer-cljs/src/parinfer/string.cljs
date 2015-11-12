@@ -1,4 +1,4 @@
-(ns parinfer-lib.string
+(ns parinfer.string
   (:require
     [clojure.string :as string]))
 

@@ -1,4 +1,4 @@
-(ns parinfer-lib.reader
+(ns parinfer.reader
   "a basic clojure reader for tracking parens and token states")
 
 (def matching-delim
