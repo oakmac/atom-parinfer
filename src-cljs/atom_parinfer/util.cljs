@@ -1,4 +1,5 @@
-(ns atom-parinfer.util)
+(ns atom-parinfer.util
+  (:require [goog.dom :as gdom]))
 
 ;;------------------------------------------------------------------------------
 ;; Logging
@@ -28,6 +29,9 @@
 
 (defn qs [selector]
   (js/document.querySelector selector))
+
+(defn remove-el! [el]
+  (gdom/removeNode el))
 
 ;;------------------------------------------------------------------------------
 ;; String

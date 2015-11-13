@@ -1,6 +1,7 @@
 (ns atom-parinfer.core
   (:require
-    [atom-parinfer.util :refer [by-id ends-with js-log log log-atom-changes qs]]
+    [atom-parinfer.util :refer [by-id ends-with js-log log log-atom-changes qs
+                                remove-el!]]
     [clojure.string :refer [join split-lines trim]]))
 
 (declare load-file-extensions!)
@@ -28,6 +29,8 @@
        (join "\n" (sort default-file-extensions))))
 
 (def file-extensions (atom default-file-extensions))
+
+(set-validator! file-extensions set?)
 
 ;; (add-watch file-extensions :change log-atom-changes)
 
@@ -73,6 +76,53 @@
       (reset! file-extensions (parse-file-extension-config (.getText editor))))))
 
 ;;------------------------------------------------------------------------------
+;; Status Bar
+;;------------------------------------------------------------------------------
+
+(def status-el-id (random-uuid))
+(def status-el-classname "inline-block parinfer-notification-c7a5b")
+
+(def valid-states #{:disabled :indent-mode :paren-mode})
+
+(def current-state
+  "Holds the current state of Parinfer"
+  (atom :disabled))
+
+;; just in case :)
+(set-validator! current-state #(contains? valid-states %))
+
+(defn- remove-status-el! []
+  (when-let [status-el (by-id status-el-id)]
+    (remove-el! status-el)))
+
+(defn- inject-status-el-into-dom! []
+  (when-let [parent-el (qs "status-bar div.status-bar-right")]
+    (let [status-el (js/document.createElement "div")]
+      (aset status-el "className" status-el-classname)
+      (aset status-el "id" status-el-id)
+      (.insertBefore parent-el status-el (aget parent-el "firstChild")))))
+
+(defn- update-status-bar! [_atm _kwd _old-state new-state]
+  (if (= new-state :disabled)
+    ;; remove the status element from the DOM
+    (remove-status-el!)
+    ;; else optionally inject and udpate it
+    (doall
+      (when-not (by-id status-el-id) (inject-status-el-into-dom!))
+      (when-let [status-el (by-id status-el-id)]
+        (aset status-el "innerHTML" (name new-state))))))
+
+(add-watch current-state :status-bar update-status-bar!)
+
+; function statusBarLink(state) {
+;   var txt;
+;   if (state === INDENT_MODE) { txt = 'Parinfer: Indent'; }
+;   if (state === PAREN_MODE)  { txt = 'Parinfer: Paren'; }
+;
+;   return '<a class="inline-block">' + txt + '</a>';
+; }
+
+;;------------------------------------------------------------------------------
 ;; Apply Parinfer
 ;;------------------------------------------------------------------------------
 
@@ -82,7 +132,14 @@
 
 ;;(add-watch editors :editors log-atom-changes)
 
-(defn- apply-parinfer! [])
+;; NOTE: onDidChangeCursorPosition sends an argument
+;;       onDidStopChanging does not
+(defn- apply-parinfer! [x]
+  (let [editor (js/atom.workspace.getActiveTextEditor)]
+    ;;(js-log x)
+    ;;(js-log (str "parinfer " (rand-int 10)))
+    ;;(js-log "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    ))
 
 ;;------------------------------------------------------------------------------
 ;; Atom Events
@@ -93,14 +150,21 @@
   (when (and editor (aget editor "id"))
     (swap! editors dissoc (aget editor "id"))))
 
+(def debounce-interval-ms 10)
+
 (defn- hello-editor
   "Runs when an editor is opened."
   [editor]
   (let [editor-id (aget editor "id")
         file-path (.getPath editor)
-        init-parinfer? (some #(ends-with file-path %) @file-extensions)]
+        ;;init-parinfer? (some #(ends-with file-path %) @file-extensions)
+        debounced-apply-parinfer (.debounce underscore apply-parinfer! debounce-interval-ms)
+        ]
     ;; add this editor to our cache
     (swap! editors assoc editor-id {})
+
+    ;; listen to editor change events
+    (.onDidChangeSelectionRange editor debounced-apply-parinfer)
 
     ;; add the destroy event
     (.onDidDestroy editor goodbye-editor)
@@ -110,7 +174,6 @@
     ))
 
 (defn- pane-changed [item]
-  ;;(js-log "TODO: pane-changed!")
   ;; TODO: update the status bar
   )
 
@@ -120,10 +183,13 @@
     (.then js-promise after-file-extension-tab-opened)))
 
 (defn- disable! []
-  (js-log "TODO: disable parinfer for this editor"))
+  (reset! current-state :disabled))
 
 (defn- toggle! []
-  (js-log "TODO: toggle parinfer for this editor"))
+  (cond
+    (= @current-state :disabled) (reset! current-state :indent-mode)
+    (= @current-state :indent-mode) (reset! current-state :paren-mode)
+    :else (reset! current-state :indent-mode)))
 
 ;;------------------------------------------------------------------------------
 ;; Package-required events
