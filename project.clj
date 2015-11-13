@@ -13,10 +13,10 @@
       {:main
         {:source-paths ["src-cljs"]
          :compiler
-           {:output-to "./lib/atom-parinfer.js"
-            :optimizations :simple
-            :language-in :ecmascript5
-            :language-out :ecmascript5
-            :target :nodejs
-            :hashbang false
-            :pretty-print true}}}})
+          {:output-to "./lib/atom-parinfer.js"
+           :optimizations :simple
+           :language-in :ecmascript5
+           :language-out :ecmascript5
+           :target :nodejs
+           :hashbang false
+           :pretty-print true}}}})

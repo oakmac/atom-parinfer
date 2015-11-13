@@ -2,7 +2,9 @@
   (:require
     [atom-parinfer.util :refer [by-id ends-with js-log log log-atom-changes qs
                                 remove-el!]]
-    [clojure.string :refer [join split-lines trim]]))
+    [clojure.string :refer [join split-lines trim]]
+    [parinfer.indent-mode :as indent-mode]
+    [parinfer.paren-mode :as paren-mode]))
 
 (declare load-file-extensions!)
 
@@ -26,7 +28,7 @@
    False if there is none"
   []
   (let [editor (js/atom.workspace.getActiveTextEditor)]
-    (if (aget editor "id")
+    (if (and editor (aget editor "id"))
       (aget editor "id")
       false)))
 
@@ -49,7 +51,11 @@
 
 (set-validator! file-extensions set?)
 
-;; (add-watch file-extensions :change log-atom-changes)
+(defn- file-has-watched-extension?
+  "Does this filename end with an extension that we are watching?"
+  [filename]
+  (and (string? filename)
+       (some #(ends-with filename %) @file-extensions)))
 
 (defn- comment-line? [l]
   (= (.charAt l 0) "#"))
@@ -139,7 +145,7 @@
 ; }
 
 ;;------------------------------------------------------------------------------
-;; Apply Parinfer
+;; Editor States
 ;;------------------------------------------------------------------------------
 
 (def editor-states
@@ -154,11 +160,47 @@
 
 (add-watch editor-states :status-bar on-change-editor-states)
 
-;; (add-watch editor-states :change log-atom-changes)
+;;------------------------------------------------------------------------------
+;; Apply Parinfer
+;;------------------------------------------------------------------------------
+
+(defn- find-start-row
+  "Returns the index of the first line we need to send to Parinfer."
+  [lines cursor-idx]
+  0
+  )
+
+(defn- find-end-row
+  "Returns the index of the last line we need to send to Parinfer."
+  [lines cursor-idx]
+  (dec (count lines)))
 
 (defn- apply-parinfer* [editor mode]
-  (js-log (str (name mode) " " (rand-int 10)))
-  )
+  (let [current-txt (.getText editor)
+        lines (split-lines current-txt)
+        ;; add a newline at the end of the file if there is not one
+        ;; https://github.com/oakmac/atom-parinfer/issues/12
+        lines (if-not (= "" (peek lines)) (conj lines "") lines)
+        cursor (.getCursorBufferPosition editor)
+        selections (.getSelectedBufferRanges editor)
+        start-row (find-start-row lines (aget cursor "row"))
+        end-row (find-end-row lines (aget cursor "row"))
+        adjusted-cursor {:cursor-line (- (aget cursor "row") start-row)
+                         :cursor-x (aget cursor "column")}
+        lines-to-infer (subvec lines start-row end-row)
+        text-to-infer (join "\n" lines-to-infer)
+        parinfer-fn (if (= mode :paren-mode)
+                      paren-mode/format-text
+                      indent-mode/format-text)
+        result (parinfer-fn text-to-infer adjusted-cursor)
+        inferred-text (if (:valid? result) (:text result) false)]
+    (when (and (string? inferred-text)
+               (not= inferred-text text-to-infer))
+      (.setTextInBufferRange editor (array (array start-row 0) (array end-row 0))
+                                    inferred-text
+                                    (js-obj "undo" "skip"))
+      (.setCursorBufferPosition editor cursor)
+      (.setSelectedBufferRanges editor selections))))
 
 (defn- apply-parinfer! [_change-info]
   (let [editor (js/atom.workspace.getActiveTextEditor)]
@@ -174,11 +216,9 @@
 
         :else nil))))
 
-(defn- file-has-watched-extension?
-  "Does this filename end with an extension that we are watching?"
-  [filename]
-  (and (string? filename)
-       (some #(ends-with filename %) @file-extensions)))
+(def debounce-interval-ms 20)
+(def debounced-apply-parinfer
+  (.debounce underscore apply-parinfer! debounce-interval-ms))
 
 ;;------------------------------------------------------------------------------
 ;; Atom Events
@@ -191,15 +231,11 @@
   (when (and editor (aget editor "id"))
     (swap! editor-states dissoc (aget editor "id"))))
 
-(def debounce-interval-ms 10)
-
 (defn- hello-editor
   "Runs when an editor is opened."
   [editor]
   (let [editor-id (aget editor "id")
-        init-parinfer? (file-has-watched-extension? (.getPath editor))
-        debounced-apply-parinfer (.debounce underscore apply-parinfer! debounce-interval-ms)
-        ]
+        init-parinfer? (file-has-watched-extension? (.getPath editor))]
     ;; add this editor state to our cache
     (swap! editor-states assoc editor-id :disabled)
 
