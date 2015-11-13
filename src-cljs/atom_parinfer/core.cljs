@@ -14,6 +14,23 @@
 (def underscore (js/require "underscore"))
 
 ;;------------------------------------------------------------------------------
+;; Editor State Predicates
+;;------------------------------------------------------------------------------
+
+(def autocomplete-el-selector "atom-text-editor.is-focused.autocomplete-active")
+(defn- is-autocomplete-showing? []
+  (if (qs autocomplete-el-selector) true false))
+
+(defn- get-active-editor-id
+  "Returns the id of the active editor.
+   False if there is none"
+  []
+  (let [editor (js/atom.workspace.getActiveTextEditor)]
+    (if (aget editor "id")
+      (aget editor "id")
+      false)))
+
+;;------------------------------------------------------------------------------
 ;; File Extensions Config
 ;;------------------------------------------------------------------------------
 
@@ -84,13 +101,6 @@
 
 (def valid-states #{:disabled :indent-mode :paren-mode})
 
-(def current-state
-  "Holds the current state of Parinfer"
-  (atom :disabled))
-
-;; just in case :)
-(set-validator! current-state #(contains? valid-states %))
-
 (defn- remove-status-el! []
   (when-let [status-el (by-id status-el-id)]
     (remove-el! status-el)))
@@ -102,7 +112,15 @@
       (aset status-el "id" status-el-id)
       (.insertBefore parent-el status-el (aget parent-el "firstChild")))))
 
-(defn- update-status-bar! [_atm _kwd _old-state new-state]
+;; TODO: make these <a> and clickable so the user can toggle state by clicking
+;;       on them
+(defn- link-text [state]
+  (cond
+    (= state :indent-mode) "Indent Mode"
+    (= state :paren-mode) "Paren Mode"
+    :else ""))
+
+(defn- update-status-bar! [new-state]
   (if (= new-state :disabled)
     ;; remove the status element from the DOM
     (remove-status-el!)
@@ -110,9 +128,7 @@
     (doall
       (when-not (by-id status-el-id) (inject-status-el-into-dom!))
       (when-let [status-el (by-id status-el-id)]
-        (aset status-el "innerHTML" (name new-state))))))
-
-(add-watch current-state :status-bar update-status-bar!)
+        (aset status-el "innerHTML" (link-text new-state))))))
 
 ; function statusBarLink(state) {
 ;   var txt;
@@ -126,29 +142,54 @@
 ;; Apply Parinfer
 ;;------------------------------------------------------------------------------
 
-(def editors
-  "Keep track of all the editor windows and their Parinfer states."
+(def editor-states
+  "Keep track of all the editor tabs and their Parinfer states."
   (atom {}))
 
-;;(add-watch editors :editors log-atom-changes)
+(defn- on-change-editor-states [_atm _kwd _old-states new-states]
+  (let [editor-id (get-active-editor-id)
+        current-editor-state (get new-states editor-id)]
+    (when (and editor-id current-editor-state)
+      (update-status-bar! current-editor-state))))
 
-;; NOTE: onDidChangeCursorPosition sends an argument
-;;       onDidStopChanging does not
-(defn- apply-parinfer! [x]
+(add-watch editor-states :status-bar on-change-editor-states)
+
+;; (add-watch editor-states :change log-atom-changes)
+
+(defn- apply-parinfer* [editor mode]
+  (js-log (str (name mode) " " (rand-int 10)))
+  )
+
+(defn- apply-parinfer! [_change-info]
   (let [editor (js/atom.workspace.getActiveTextEditor)]
-    ;;(js-log x)
-    ;;(js-log (str "parinfer " (rand-int 10)))
-    ;;(js-log "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    ))
+    (when (and editor
+               (aget editor "id")
+               (not (is-autocomplete-showing?)))
+      (cond
+        (= :indent-mode (get @editor-states (aget editor "id")))
+        (apply-parinfer* editor :indent-mode)
+
+        (= :paren-mode (get @editor-states (aget editor "id")))
+        (apply-parinfer* editor :paren-mode)
+
+        :else nil))))
+
+(defn- file-has-watched-extension?
+  "Does this filename end with an extension that we are watching?"
+  [filename]
+  (and (string? filename)
+       (some #(ends-with filename %) @file-extensions)))
 
 ;;------------------------------------------------------------------------------
 ;; Atom Events
 ;;------------------------------------------------------------------------------
 
 ;; forget this editor
-(defn- goodbye-editor [editor]
+(defn- goodbye-editor
+  "Runs when an editor tab is closed."
+  [editor]
   (when (and editor (aget editor "id"))
-    (swap! editors dissoc (aget editor "id"))))
+    (swap! editor-states dissoc (aget editor "id"))))
 
 (def debounce-interval-ms 10)
 
@@ -156,12 +197,11 @@
   "Runs when an editor is opened."
   [editor]
   (let [editor-id (aget editor "id")
-        file-path (.getPath editor)
-        ;;init-parinfer? (some #(ends-with file-path %) @file-extensions)
+        init-parinfer? (file-has-watched-extension? (.getPath editor))
         debounced-apply-parinfer (.debounce underscore apply-parinfer! debounce-interval-ms)
         ]
-    ;; add this editor to our cache
-    (swap! editors assoc editor-id {})
+    ;; add this editor state to our cache
+    (swap! editor-states assoc editor-id :disabled)
 
     ;; listen to editor change events
     (.onDidChangeSelectionRange editor debounced-apply-parinfer)
@@ -173,9 +213,12 @@
     ;  (js-log "init parinfer for this file"))
     ))
 
-(defn- pane-changed [item]
-  ;; TODO: update the status bar
-  )
+(defn- pane-changed
+  "Runs when the user changes their pane focus.
+   ie: switches editor tabs"
+  [item]
+  ;; update the status bar
+  (swap! editor-states identity))
 
 (defn- edit-file-extensions! []
   ;; open the file extension config file in a new tab
@@ -183,13 +226,17 @@
     (.then js-promise after-file-extension-tab-opened)))
 
 (defn- disable! []
-  (reset! current-state :disabled))
+  (let [editor-id (get-active-editor-id)]
+    (when editor-id
+      (swap! editor-states assoc editor-id :disabled))))
 
 (defn- toggle! []
-  (cond
-    (= @current-state :disabled) (reset! current-state :indent-mode)
-    (= @current-state :indent-mode) (reset! current-state :paren-mode)
-    :else (reset! current-state :indent-mode)))
+  (let [editor-id (get-active-editor-id)
+        current-state (get @editor-states editor-id)]
+    (when current-state
+      (if (= current-state :indent-mode)
+        (swap! editor-states assoc editor-id :paren-mode)
+        (swap! editor-states assoc editor-id :indent-mode)))))
 
 ;;------------------------------------------------------------------------------
 ;; Package-required events
