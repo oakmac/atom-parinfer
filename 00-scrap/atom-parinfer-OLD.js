@@ -1,3 +1,17 @@
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//
+// 13 Nov 2015 - C. Oakman
+//
+// This is the original atom-parinfer implementation written in JS; now
+// re-written in ClojureScript in the src-cljs/atom-parinfer/core.cljs file.
+//
+// Keeping this file in the repo for historial purposes as well as a possible
+// future reference.
+//
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 // requires
 var CompositeDisposable = require('atom').CompositeDisposable,
     fs = require('fs-plus'),

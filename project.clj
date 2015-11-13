@@ -1,5 +1,9 @@
-(defproject atom-parinfer "0.0.0"
+(defproject atom-parinfer "0.6.0"
   :description "Parinfer extension for the Atom editor."
+
+  :license {:name "ISC License"
+            :url "https://github.com/oakmac/atom-parinfer/blob/master/LICENSE.md"
+            :distribution :repo}
 
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "1.7.122"]]
