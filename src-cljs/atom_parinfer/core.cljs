@@ -45,7 +45,8 @@
 
 (def default-file-extension-config
   (str "# one file extension per line please :)\n"
-       (join "\n" (sort default-file-extensions))))
+       (join "\n" (sort default-file-extensions))
+       "\n"))
 
 (def file-extensions (atom default-file-extensions))
 
@@ -122,8 +123,8 @@
 ;;       on them
 (defn- link-text [state]
   (cond
-    (= state :indent-mode) "Indent Mode"
-    (= state :paren-mode) "Paren Mode"
+    (= state :indent-mode) "Parinfer: Indent"
+    (= state :paren-mode) "Parinfer: Paren"
     :else ""))
 
 (defn- update-status-bar! [new-state]
@@ -164,20 +165,44 @@
 ;; Apply Parinfer
 ;;------------------------------------------------------------------------------
 
+;; https://github.com/oakmac/atom-parinfer/issues/9
+(defn- is-parent-expression-line?
+  [line]
+  (= "(" (.charAt line 0)))
+
 (defn- find-start-row
   "Returns the index of the first line we need to send to Parinfer."
   [lines cursor-idx]
-  0
-  )
+  (if
+    ;; on the first line?
+    (zero? cursor-idx) 0
+    ;; else "look up" until we find the closest parent expression
+    (let [found-it? (atom false)
+          idx (atom (dec cursor-idx))]
+      (while (and (not @found-it?)
+                  (not (zero? @idx)))
+        (if (is-parent-expression-line? (nth lines @idx))
+          (reset! found-it? true)
+          (swap! idx dec)))
+      @idx)))
 
 (defn- find-end-row
   "Returns the index of the last line we need to send to Parinfer."
   [lines cursor-idx]
-  (dec (count lines)))
+  ;; "look down" until we find the start of the next parent expression
+  (let [found-it? (atom false)
+        max-value (dec (count lines))
+        idx (atom (inc cursor-idx))]
+    (while (and (not @found-it?)
+                (< @idx max-value))
+      (if (is-parent-expression-line? (nth lines @idx))
+        (reset! found-it? true)
+        (swap! idx inc)))
+    @idx))
 
 (defn- apply-parinfer* [editor mode]
   (let [current-txt (.getText editor)
-        lines (split-lines current-txt)
+        lines (into [] (.split current-txt "\n"))
         ;; add a newline at the end of the file if there is not one
         ;; https://github.com/oakmac/atom-parinfer/issues/12
         lines (if-not (= "" (peek lines)) (conj lines "") lines)
@@ -188,7 +213,7 @@
         adjusted-cursor {:cursor-line (- (aget cursor "row") start-row)
                          :cursor-x (aget cursor "column")}
         lines-to-infer (subvec lines start-row end-row)
-        text-to-infer (join "\n" lines-to-infer)
+        text-to-infer (str (join "\n" lines-to-infer) "\n")
         parinfer-fn (if (= mode :paren-mode)
                       paren-mode/format-text
                       indent-mode/format-text)
@@ -202,7 +227,7 @@
       (.setCursorBufferPosition editor cursor)
       (.setSelectedBufferRanges editor selections))))
 
-(defn- apply-parinfer! [_change-info]
+(defn- apply-parinfer! [_cursor-change-info]
   (let [editor (js/atom.workspace.getActiveTextEditor)]
     (when (and editor
                (aget editor "id")
@@ -216,7 +241,11 @@
 
         :else nil))))
 
-(def debounce-interval-ms 20)
+;; NOTE: 10ms seems to work well for the debounce interval.
+;; I don't notice any lag when typing on my machine and the result displays fast
+;; enough that it doesn't feel "delayed".
+;; Feel free to play around with it on your machine if that is not the case.
+(def debounce-interval-ms 10)
 (def debounced-apply-parinfer
   (.debounce underscore apply-parinfer! debounce-interval-ms))
 
@@ -245,9 +274,16 @@
     ;; add the destroy event
     (.onDidDestroy editor goodbye-editor)
 
-    ;(when init-parinfer?
-    ;  (js-log "init parinfer for this file"))
-    ))
+    ;; If we recognize this file extension, run Paren Mode on it first and then
+    ;; drop them into Indent Mode initially.
+    ;; TODO: need better UX around this step
+    ;; https://github.com/oakmac/atom-parinfer/issues/18
+    (when init-parinfer?
+      (let [current-text (.getText editor)
+            result (paren-mode/format-text current-text)]
+        (when (:valid? result)
+          (.setText editor (:text result)))
+          (swap! editor-states assoc editor-id :indent-mode)))))
 
 (defn- pane-changed
   "Runs when the user changes their pane focus.
@@ -290,10 +326,17 @@
   (js/atom.commands.add "atom-workspace"
     (js-obj "parinfer:editFileExtensions" edit-file-extensions!
             "parinfer:disable" disable!
-            "parinfer:toggleMode" toggle!)))
+            "parinfer:toggleMode" toggle!))
 
-(defn- deactivate [])
-  ;; subscriptions.dispose();
+  ;; Sometimes the editor events can all load before Atom catches up with the DOM
+  ;; resulting in an initial empty status bar.
+  ;; These calls help with that and it doesn't hurt anything to call them extra.
+  ;; TODO: figure out if there is an actual Atom event instead of this hackery
+  (js/setTimeout pane-changed 100)
+  (js/setTimeout pane-changed 500)
+  (js/setTimeout pane-changed 1000)
+  (js/setTimeout pane-changed 2000)
+  (js/setTimeout pane-changed 5000))
 
 ;;------------------------------------------------------------------------------
 ;; Module export required for Atom package
@@ -303,7 +346,7 @@
 
 (set! js/module.exports
   (js-obj "activate" activate
-          "deactivate" deactivate
+          "deactivate" always-nil
           "serialize" always-nil))
 
 ;; noop - needed for :nodejs CLJS build
