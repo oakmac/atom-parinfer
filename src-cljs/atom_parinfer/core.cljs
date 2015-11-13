@@ -282,8 +282,8 @@
       (let [current-text (.getText editor)
             result (paren-mode/format-text current-text)]
         (when (:valid? result)
-          (.setText editor (:text result)))
-          (swap! editor-states assoc editor-id :indent-mode)))))
+          (.setText editor (:text result))
+          (swap! editor-states assoc editor-id :indent-mode))))))
 
 (defn- pane-changed
   "Runs when the user changes their pane focus.
