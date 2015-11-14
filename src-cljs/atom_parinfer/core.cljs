@@ -12,6 +12,7 @@
 ;;------------------------------------------------------------------------------
 
 (def fs (js/require "fs-plus"))
+(def SimpleCache (js/require "simple-lru-cache"))
 (def underscore (js/require "underscore"))
 
 ;;------------------------------------------------------------------------------
@@ -171,6 +172,11 @@
 ;; Apply Parinfer
 ;;------------------------------------------------------------------------------
 
+;; keep some small LRU caches of the Parinfer results
+(def lru-cache-size 100)
+(def indent-mode-cache (SimpleCache. (js-obj "maxSize" lru-cache-size)))
+(def paren-mode-cache (SimpleCache. (js-obj "maxSize" lru-cache-size)))
+
 ;; https://github.com/oakmac/atom-parinfer/issues/9
 (defn- is-parent-expression-line?
   [line]
@@ -223,8 +229,19 @@
         parinfer-fn (if (= mode :paren-mode)
                       paren-mode/format-text
                       indent-mode/format-text)
-        result (parinfer-fn text-to-infer adjusted-cursor)
+        cached-result (if (= mode :paren-mode)
+                        (.get paren-mode-cache text-to-infer)
+                        (.get indent-mode-cache text-to-infer))
+        result (if cached-result
+                 cached-result
+                 (parinfer-fn text-to-infer adjusted-cursor))
         inferred-text (if (:valid? result) (:text result) false)]
+    ;; add this result to the cache if necessary
+    (when-not cached-result
+      (if (= mode :paren-mode)
+        (.set paren-mode-cache text-to-infer result)
+        (.set indent-mode-cache text-to-infer result)))
+    ;; update the text buffer
     (when (and (string? inferred-text)
                (not= inferred-text text-to-infer))
       (.setTextInBufferRange editor (array (array start-row 0) (array end-row 0))

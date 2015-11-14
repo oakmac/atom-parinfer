@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "fs-plus": "2.8.1",
+    "simple-lru-cache": "0.0.2",
     "underscore": "1.8.3"
   }
 }
