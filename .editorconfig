@@ -1,7 +1,7 @@
 # This file is for unifying the coding style for different editors and IDEs.
 # More information at http://EditorConfig.org
 
-# No .editorconfig files above the root directory
+# Do not check for any .editorconfig files above this directory
 root = true
 
 # All files
