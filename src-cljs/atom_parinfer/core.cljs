@@ -1,7 +1,6 @@
 (ns atom-parinfer.core
   (:require
-    [atom-parinfer.util :refer [by-id ends-with js-log log log-atom-changes qs
-                                remove-el!]]
+    [atom-parinfer.util :refer [by-id ends-with js-log log log-atom-changes qs remove-el!]]
     [clojure.string :refer [join split-lines trim]]
     [parinfer.indent-mode :as indent-mode]
     [parinfer.paren-mode :as paren-mode]))
