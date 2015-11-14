@@ -105,8 +105,22 @@
 
 (def status-el-id (random-uuid))
 (def status-el-classname "inline-block parinfer-notification-c7a5b")
+(def warning-class " parinfer-warning-932a4")
 
-(def valid-states #{:disabled :indent-mode :paren-mode})
+(defn- set-status-bar-warning!
+  "Flag the status bar to indicate detection of unbalanced parens."
+  []
+  (when-let [status-el (by-id status-el-id)]
+    (let [class-name (aget status-el "className")]
+      (when (= -1 (.indexOf class-name warning-class))
+        (aset status-el "className" (str class-name warning-class))))))
+
+(defn- clear-status-bar-warning!
+  "Remove status bar warning."
+  []
+  (when-let [status-el (by-id status-el-id)]
+    (let [class-name (aget status-el "className")]
+      (aset status-el "className" (.replace class-name warning-class "")))))
 
 (defn- remove-status-el! []
   (when-let [status-el (by-id status-el-id)]
@@ -248,7 +262,12 @@
                                     inferred-text
                                     (js-obj "undo" "skip"))
       (.setCursorBufferPosition editor cursor)
-      (.setSelectedBufferRanges editor selections))))
+      (.setSelectedBufferRanges editor selections))
+    ;; update the status bar
+    (if (and (= mode :paren-mode)
+             (not (:valid? result)))
+      (set-status-bar-warning!)
+      (clear-status-bar-warning!))))
 
 (defn- apply-parinfer! [_cursor-change-info]
   (let [editor (js/atom.workspace.getActiveTextEditor)]
@@ -331,7 +350,9 @@
     (when current-state
       (if (= current-state :indent-mode)
         (swap! editor-states assoc editor-id :paren-mode)
-        (swap! editor-states assoc editor-id :indent-mode)))))
+        (swap! editor-states assoc editor-id :indent-mode))
+      ;; run parinfer in their new mode
+      (debounced-apply-parinfer))))
 
 ;;------------------------------------------------------------------------------
 ;; Package-required events
