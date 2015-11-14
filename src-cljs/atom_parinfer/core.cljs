@@ -6,7 +6,7 @@
     [parinfer.indent-mode :as indent-mode]
     [parinfer.paren-mode :as paren-mode]))
 
-(declare load-file-extensions!)
+(declare load-file-extensions! toggle-mode!)
 
 ;;------------------------------------------------------------------------------
 ;; Requires
@@ -112,11 +112,18 @@
   (when-let [status-el (by-id status-el-id)]
     (remove-el! status-el)))
 
+(defn- click-status-bar-link [js-evt]
+  (.preventDefault js-evt)     ;; prevent href event
+  (.blur (by-id status-el-id)) ;; remove focus from the status bar element
+  (toggle-mode!))
+
 (defn- inject-status-el-into-dom! []
   (when-let [parent-el (qs "status-bar div.status-bar-right")]
-    (let [status-el (js/document.createElement "div")]
+    (let [status-el (js/document.createElement "a")]
       (aset status-el "className" status-el-classname)
+      (aset status-el "href" "#")
       (aset status-el "id" status-el-id)
+      (.addEventListener status-el "click" click-status-bar-link)
       (.insertBefore parent-el status-el (aget parent-el "firstChild")))))
 
 ;; TODO: make these <a> and clickable so the user can toggle state by clicking
@@ -302,7 +309,7 @@
     (when editor-id
       (swap! editor-states assoc editor-id :disabled))))
 
-(defn- toggle! []
+(defn- toggle-mode! []
   (let [editor-id (get-active-editor-id)
         current-state (get @editor-states editor-id)]
     (when current-state
@@ -326,7 +333,7 @@
   (js/atom.commands.add "atom-workspace"
     (js-obj "parinfer:editFileExtensions" edit-file-extensions!
             "parinfer:disable" disable!
-            "parinfer:toggleMode" toggle!))
+            "parinfer:toggleMode" toggle-mode!))
 
   ;; Sometimes the editor events can all load before Atom catches up with the DOM
   ;; resulting in an initial empty status bar.
