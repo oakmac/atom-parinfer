@@ -184,7 +184,8 @@
 ;; https://github.com/oakmac/atom-parinfer/issues/9
 (defn- is-parent-expression-line?
   [line]
-  (= "(" (.charAt line 0)))
+  (and (= "(" (.charAt line 0))
+       (.match (.charAt line 1) #"\w")))
 
 (defn- find-start-row
   "Returns the index of the first line we need to send to Parinfer."
@@ -193,28 +194,25 @@
     ;; on the first line?
     (zero? cursor-idx) 0
     ;; else "look up" until we find the closest parent expression
-    (let [found-it? (atom false)
-          idx (atom (dec cursor-idx))]
-      (while (and (not @found-it?)
-                  (not (zero? @idx)))
-        (if (is-parent-expression-line? (nth lines @idx))
-          (reset! found-it? true)
-          (swap! idx dec)))
-      @idx)))
+    (loop [idx (dec cursor-idx)]
+      (if (or (zero? idx)
+              (is-parent-expression-line? (nth lines idx)))
+        idx
+        (recur (dec idx))))))
 
 (defn- find-end-row
   "Returns the index of the last line we need to send to Parinfer."
   [lines cursor-idx]
-  ;; "look down" until we find the start of the next parent expression
-  (let [found-it? (atom false)
-        max-value (dec (count lines))
-        idx (atom (inc cursor-idx))]
-    (while (and (not @found-it?)
-                (< @idx max-value))
-      (if (is-parent-expression-line? (nth lines @idx))
-        (reset! found-it? true)
-        (swap! idx inc)))
-    @idx))
+  (let [max-idx (dec (count lines))]
+    (if
+      ;; are we on the last line?
+      (== cursor-idx max-idx) cursor-idx
+      ;; "look down" until we find the start of the next parent expression
+      (loop [idx (inc cursor-idx)]
+        (if (or (== idx max-idx)
+                (is-parent-expression-line? (nth lines idx)))
+          idx
+          (recur (inc idx)))))))
 
 (defn- apply-parinfer* [editor mode]
   (let [current-txt (.getText editor)
