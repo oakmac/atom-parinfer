@@ -184,8 +184,7 @@
 ;; https://github.com/oakmac/atom-parinfer/issues/9
 (defn- is-parent-expression-line?
   [line]
-  (and (= "(" (.charAt line 0))
-       (.match (.charAt line 1) #"\w")))
+  (.match line #"^\(\w"))
 
 (defn- find-start-row
   "Returns the index of the first line we need to send to Parinfer."

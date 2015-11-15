@@ -62,13 +62,14 @@ of a useful feature :)
 ## Known Limitations
 
 This extension uses a trick for performance reasons that may act oddly in
-certain circumstances. It assumes that an open paren - ie: `(` - on the first
-character of a line is the start of a new expression and tells the Parinfer
-algorithm to start analyzing from there until the next line that starts with a `(`.
-In 99% of cases, this is probably a correct assumption, but might break inside
-multi-line strings or other non-standard circumstances (hat-tip to [Shaun] for
-pointing out the multi-line string case). This is tracked at [Issue #9]; please
-add to that if you experience problems.
+certain circumstances. It assumes that an open paren followed by a "word"
+character - ie: regex `^\(\w` - at the start of a line is the start of a new
+expression and tells the Parinfer algorithm to start analyzing from there until
+the next line that matches the same regex. In 99% of cases, this is probably a
+correct assumption, but might break inside multi-line strings or other
+non-standard circumstances (hat-tip to [Shaun] for pointing out the multi-line
+string case). This is tracked at [Issue #9]; please add to that if you
+experience problems.
 
 atom-parinfer keeps a small [LRU cache] of Indent Mode and Paren Mode results
 for performance reasons. The size of the cache is small and unlikely to cause
