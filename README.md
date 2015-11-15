@@ -99,7 +99,7 @@ Future features include:
 [Shaun]:https://github.com/shaunlebron/
 [Issue #9]:https://github.com/oakmac/atom-parinfer/issues/9
 [Paren Mode]:http://shaunlebron.github.io/parinfer/#paren-mode
-[Indent Mode]:[Indent Mode]:http://shaunlebron.github.io/parinfer/#indent-mode
+[Indent Mode]:http://shaunlebron.github.io/parinfer/#indent-mode
 [Fixing existing files]:http://shaunlebron.github.io/parinfer/#fixing-existing-files
 [LRU cache]:https://en.wikipedia.org/wiki/Cache_algorithms#LRU
 [ISC License]:LICENSE.md
