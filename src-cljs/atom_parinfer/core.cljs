@@ -8,7 +8,7 @@
 (declare load-file-extensions! toggle-mode!)
 
 ;;------------------------------------------------------------------------------
-;; Requires
+;; JS Requires
 ;;------------------------------------------------------------------------------
 
 (def fs (js/require "fs-plus"))
@@ -16,7 +16,7 @@
 (def underscore (js/require "underscore"))
 
 ;;------------------------------------------------------------------------------
-;; Editor State Predicates
+;; Get Editor State
 ;;------------------------------------------------------------------------------
 
 (def autocomplete-el-selector "atom-text-editor.is-focused.autocomplete-active")
@@ -140,8 +140,6 @@
       (.addEventListener status-el "click" click-status-bar-link)
       (.insertBefore parent-el status-el (aget parent-el "firstChild")))))
 
-;; TODO: make these <a> and clickable so the user can toggle state by clicking
-;;       on them
 (defn- link-text [state]
   (cond
     (= state :indent-mode) "Parinfer: Indent"
@@ -152,22 +150,14 @@
   (if (= new-state :disabled)
     ;; remove the status element from the DOM
     (remove-status-el!)
-    ;; else optionally inject and udpate it
+    ;; else optionally inject and update it
     (doall
       (when-not (by-id status-el-id) (inject-status-el-into-dom!))
       (when-let [status-el (by-id status-el-id)]
         (aset status-el "innerHTML" (link-text new-state))))))
 
-; function statusBarLink(state) {
-;   var txt;
-;   if (state === INDENT_MODE) { txt = 'Parinfer: Indent'; }
-;   if (state === PAREN_MODE)  { txt = 'Parinfer: Paren'; }
-;
-;   return '<a class="inline-block">' + txt + '</a>';
-; }
-
 ;;------------------------------------------------------------------------------
-;; Editor States
+;; Editor States Atom
 ;;------------------------------------------------------------------------------
 
 (def editor-states
@@ -295,7 +285,6 @@
 ;; Atom Events
 ;;------------------------------------------------------------------------------
 
-;; forget this editor
 (defn- goodbye-editor
   "Runs when an editor tab is closed."
   [editor]
@@ -307,7 +296,7 @@
   [editor]
   (let [editor-id (aget editor "id")
         init-parinfer? (file-has-watched-extension? (.getPath editor))]
-    ;; add this editor state to our cache
+    ;; add this editor state to our atom
     (swap! editor-states assoc editor-id :disabled)
 
     ;; listen to editor change events
@@ -317,7 +306,7 @@
     (.onDidDestroy editor goodbye-editor)
 
     ;; If we recognize this file extension, run Paren Mode on it first and then
-    ;; drop them into Indent Mode initially.
+    ;; drop the user into Indent Mode.
     ;; TODO: need better UX around this step
     ;; https://github.com/oakmac/atom-parinfer/issues/18
     (when init-parinfer?
@@ -383,7 +372,7 @@
   (js/setTimeout pane-changed 5000))
 
 ;;------------------------------------------------------------------------------
-;; Module export required for Atom package
+;; Module Export (required for Atom package)
 ;;------------------------------------------------------------------------------
 
 (def always-nil (constantly nil))
