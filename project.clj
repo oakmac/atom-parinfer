@@ -14,6 +14,9 @@
 
   :source-paths ["src"]
 
+  :clean-targets ["target"
+                  "./lib/atom-parinfer.js"]
+
   :cljsbuild
     {:builds
       {:main
