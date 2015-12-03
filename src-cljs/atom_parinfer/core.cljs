@@ -2,6 +2,7 @@
   (:require
     [atom-parinfer.util :refer [by-id ends-with js-log log log-atom-changes qs remove-el!]]
     [clojure.string :refer [join split-lines trim]]
+    [lowline.functions :refer [debounce]]
     [parinfer.indent-mode :as indent-mode]
     [parinfer.paren-mode :as paren-mode]))
 
@@ -13,7 +14,6 @@
 
 (def fs (js/require "fs-plus"))
 (def SimpleCache (js/require "simple-lru-cache"))
-(def underscore (js/require "underscore"))
 
 ;;------------------------------------------------------------------------------
 ;; Get Editor State
@@ -276,7 +276,7 @@
 ;; Feel free to play around with it on your machine if that is not the case.
 (def debounce-interval-ms 10)
 (def debounced-apply-parinfer
-  (.debounce underscore apply-parinfer! debounce-interval-ms))
+  (debounce apply-parinfer! debounce-interval-ms))
 
 ;;------------------------------------------------------------------------------
 ;; Atom Events
