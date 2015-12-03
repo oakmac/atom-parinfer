@@ -15,8 +15,9 @@ as normal and Parinfer will infer the intended paren structure.
 ## Installation
 
 1. Install [Atom]
-1. In Atom, pull up the Settings tab by pressing `Ctrl + ,` (`Cmd + ,` on Mac)
-   or using the main menu Edit --> Preferences
+1. In Atom, pull up the Settings tab by pressing <kbd>Ctrl</kbd>+<kbd>,</kbd>
+   (<kbd>Cmd</kbd>+<kbd>,</kbd> on Mac) or using the main menu Edit -->
+   Preferences
 1. Click on the Install tab
 1. Search for "parinfer" and find this package
 1. Press the Install button :)
@@ -43,10 +44,10 @@ that applying Paren Mode to a file can result in [catching very hard-to-find
 bugs] in your existing code! As usual, developers are responsible for reviewing
 their diffs before a code commit :)
 
-Use hotkey `Ctrl + (` to turn Parinfer on and to toggle between Indent Mode and
-Paren Mode.
+Use hotkey <kbd>Ctrl</kbd>+<kbd>(</kbd> to turn Parinfer on and to toggle
+between Indent Mode and Paren Mode.
 
-Use hotkey `Ctrl + )` to disable Pariner.
+Use hotkey <kbd>Ctrl</kbd>+<kbd>)</kbd> to disable Pariner.
 
 The status bar will indicate which mode you are in or show nothing if Parinfer
 is turned off.
