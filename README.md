@@ -26,7 +26,7 @@ as normal and Parinfer will infer the intended paren structure.
 
 Once the package has been installed, it will automatically load in the
 background when you open Atom and watch for file extensions found in a config
-file. The default file extensions are: `.clj` `.cljs` `.cljc` `.lfe`
+file. The default file extensions are: `.clj` `.cljs` `.cljc` `.lfe` `.rkt`
 
 You can edit these file extensions by going to Packages --> Parinfer --> Edit
 File Extensions in the menu.
