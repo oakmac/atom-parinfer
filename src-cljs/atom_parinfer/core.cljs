@@ -295,7 +295,11 @@
   "Runs when an editor is opened."
   [editor]
   (let [editor-id (aget editor "id")
-        init-parinfer? (file-has-watched-extension? (.getPath editor))]
+        init-parinfer? (file-has-watched-extension? (.getPath editor))
+        current-file (.getTitle editor) ;; Not the full path, just the file
+        confirm-text (str "Parinfer has detected the need to update the contents of \""
+                          current-file "\". These changes may affect your code."
+                          "\n\nDo you want to let parinfer alter the file?")]
     ;; add this editor state to our atom
     (swap! editor-states assoc editor-id :disabled)
 
@@ -307,12 +311,24 @@
 
     ;; If we recognize this file extension, run Paren Mode on it first and then
     ;; drop the user into Indent Mode.
-    ;; TODO: need better UX around this step
-    ;; https://github.com/oakmac/atom-parinfer/issues/18
     (when init-parinfer?
       (let [current-text (.getText editor)
-            result (paren-mode/format-text current-text)]
-        (when (:valid? result)
+            result (paren-mode/format-text current-text)
+            changes? (not= (:text result) current-text)]
+        (when (and (:valid? result)
+                   changes?
+                   ;; If changes are detected after running Paren Mode, then
+                   ;; prompt the user with an option to let parinfer change
+                   ;; the file. If the user chooses "Yes", then parinfer will
+                   ;; replace the text and enter Indent Mode. If "No", the text
+                   ;; will not be replaced and parinfer will be turned off for
+                   ;; the file's editor pane.
+                   (zero?
+                     (js/atom.confirm
+                       (clj->js
+                         {:message (str "Parinfer will change " current-file)
+                          :detailedMessage confirm-text
+                          :buttons ["Yes" "No"]}))))
           (.setText editor (:text result))
           (swap! editor-states assoc editor-id :indent-mode))))))
 
