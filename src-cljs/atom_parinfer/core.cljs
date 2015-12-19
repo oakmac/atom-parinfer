@@ -1,6 +1,7 @@
 (ns atom-parinfer.core
   (:require
-    [atom-parinfer.util :refer [by-id ends-with js-log log log-atom-changes qs remove-el!]]
+    [atom-parinfer.util :refer [always-nil by-id ends-with js-log lines-diff log
+                                log-atom-changes one? qs remove-el!]]
     [clojure.string :refer [join split-lines trim]]
     [lowline.functions :refer [debounce]]
     [parinfer.indent-mode :as indent-mode]
@@ -144,10 +145,10 @@
       (.insertBefore parent-el status-el (aget parent-el "firstChild")))))
 
 (defn- link-text [state]
-  (cond
-    (= state :indent-mode) "Parinfer: Indent"
-    (= state :paren-mode) "Parinfer: Paren"
-    :else ""))
+  (condp = state
+    :indent-mode "Parinfer: Indent"
+    :paren-mode  "Parinfer: Paren"
+    :else        ""))
 
 (defn- update-status-bar! [new-state]
   (if (= new-state :disabled)
@@ -291,11 +292,29 @@
   (when (and editor (aget editor "id"))
     (swap! editor-states dissoc (aget editor "id"))))
 
+(defn- confirm-paren-mode-msg [filename num-lines-changed]
+  (let [l (if (one? num-lines-changed) "line" "lines")]
+    (str "Parinfer needs to make some changes to \"" filename "\" before enabling Indent Mode. "
+         "These changes will only effect whitespace and indentation; the struture of the file will be unchanged."
+         "\n\n"
+         num-lines-changed " " l " will be effected."
+         "\n\n"
+         "Would you like Parinfer to modify the file? (recommended)")))
+
+(defn- paren-mode-failed-msg [filename]
+  (str "Parinfer was unable to parse \"" filename "\"."
+       "\n\n"
+       "It is likely that this file has unbalanced parenthesis and will not compile."
+       "\n\n"
+       "Parinfer will enter Paren Mode so you may fix the problem. "
+       "Press Ctrl + ( to switch to Indent Mode once the file is balanced."))
+
 (defn- hello-editor
   "Runs when an editor is opened."
   [editor]
   (let [editor-id (aget editor "id")
-        init-parinfer? (file-has-watched-extension? (.getPath editor))]
+        init-parinfer? (file-has-watched-extension? (.getPath editor))
+        current-file (.getTitle editor)]
     ;; add this editor state to our atom
     (swap! editor-states assoc editor-id :disabled)
 
@@ -305,15 +324,37 @@
     ;; add the destroy event
     (.onDidDestroy editor goodbye-editor)
 
-    ;; If we recognize this file extension, run Paren Mode on it first and then
-    ;; drop the user into Indent Mode.
-    ;; TODO: need better UX around this step
-    ;; https://github.com/oakmac/atom-parinfer/issues/18
+    ;; run Paren Mode on the file if we recognize the extension.
     (when init-parinfer?
       (let [current-text (.getText editor)
-            result (paren-mode/format-text current-text)]
-        (when (:valid? result)
-          (.setText editor (:text result))
+            paren-mode-result (paren-mode/format-text current-text)
+            paren-mode-text (:text paren-mode-result)
+            paren-mode-succeeded? (:valid? paren-mode-result)
+            text-delta (lines-diff current-text paren-mode-text)
+            paren-mode-changed-the-file? (and paren-mode-succeeded?
+                                              (not (zero? (:diff text-delta))))]
+        (cond
+          ;; Paren Mode could not run (probably because the file has unmatched delimiters)
+          ;; inform them and then drop into Paren Mode
+          (not paren-mode-succeeded?)
+          (js/atom.confirm
+            (js-obj "message" (str current-file " has unbalanced parens")
+                    "detailedMessage" (paren-mode-failed-msg current-file)
+                    "buttons" (js-obj "Ok" #(swap! editor-states assoc editor-id :paren-mode))))
+
+          ;; Paren Mode changed the file; prompt them to make changes
+          paren-mode-changed-the-file?
+          (js/atom.confirm
+            (js-obj "message" (str "Parinfer will change " current-file)
+                    "detailedMessage" (confirm-paren-mode-msg current-file (:diff text-delta))
+                    "buttons" (js-obj "Yes" (fn []
+                                              (.setText editor paren-mode-text)
+                                              (swap! editor-states assoc editor-id :indent-mode))
+                                      "No" always-nil)))
+
+          ;; else Paren Mode succeeded and the file was unchanged
+          ;; drop them into Indent Mode
+          :else
           (swap! editor-states assoc editor-id :indent-mode))))))
 
 (defn- pane-changed
@@ -374,8 +415,6 @@
 ;;------------------------------------------------------------------------------
 ;; Module Export (required for Atom package)
 ;;------------------------------------------------------------------------------
-
-(def always-nil (constantly nil))
 
 (set! js/module.exports
   (js-obj "activate" activate
