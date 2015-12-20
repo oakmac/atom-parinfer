@@ -86,7 +86,6 @@ Future features include:
 
 * JSHint-like comments to automatically "turn on" Parinfer for files ([Issue #5](https://github.com/oakmac/atom-parinfer/issues/5))
 * JSHint-like comments to tell Parinfer to ignore sections of your code ([Issue #6](https://github.com/oakmac/atom-parinfer/issues/6))
-* Better UX before Paren Mode makes changes to a newly-opened file ([Issue #18](https://github.com/oakmac/atom-parinfer/issues/18))
 * A menu option to run Paren Mode on all files in a directory ([Issue #21](https://github.com/oakmac/atom-parinfer/issues/21))
 
 ## License
