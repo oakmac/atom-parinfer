@@ -295,16 +295,16 @@
 (defn- confirm-paren-mode-msg [filename num-lines-changed]
   (let [l (if (one? num-lines-changed) "line" "lines")]
     (str "Parinfer needs to make some changes to \"" filename "\" before enabling Indent Mode. "
-         "These changes will only effect whitespace and indentation; the struture of the file will be unchanged."
+         "These changes will only affect whitespace and indentation; the structure of the file will be unchanged."
          "\n\n"
-         num-lines-changed " " l " will be effected."
+         num-lines-changed " " l " will be affected."
          "\n\n"
          "Would you like Parinfer to modify the file? (recommended)")))
 
 (defn- paren-mode-failed-msg [filename]
   (str "Parinfer was unable to parse \"" filename "\"."
        "\n\n"
-       "It is likely that this file has unbalanced parenthesis and will not compile."
+       "It is likely that this file has unbalanced parentheses and will not compile."
        "\n\n"
        "Parinfer will enter Paren Mode so you may fix the problem. "
        "Press Ctrl + ( to switch to Indent Mode once the file is balanced."))
