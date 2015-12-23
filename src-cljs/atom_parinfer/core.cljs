@@ -1,11 +1,10 @@
 (ns atom-parinfer.core
   (:require
-    [atom-parinfer.util :refer [always-nil by-id ends-with js-log lines-diff log
+    [atom-parinfer.util :refer [always-nil by-id js-log lines-diff log
                                 log-atom-changes one? qs remove-el!]]
     [clojure.string :refer [join split-lines trim]]
-    [lowline.functions :refer [debounce]]
-    [parinfer.indent-mode :as indent-mode]
-    [parinfer.paren-mode :as paren-mode]))
+    [goog.string :as gstring]
+    [lowline.functions :refer [debounce]]))
 
 (declare load-file-extensions! toggle-mode!)
 
@@ -14,6 +13,7 @@
 ;;------------------------------------------------------------------------------
 
 (def fs (js/require "fs-plus"))
+(def parinfer (js/require "parinfer"))
 (def SimpleCache (js/require "simple-lru-cache"))
 
 ;;------------------------------------------------------------------------------
@@ -60,7 +60,7 @@
   "Does this filename end with an extension that we are watching?"
   [filename]
   (and (string? filename)
-       (some #(ends-with filename %) @file-extensions)))
+       (some #(gstring/endsWith filename %) @file-extensions)))
 
 (defn- comment-line? [l]
   (= (.charAt l 0) "#"))
@@ -227,25 +227,26 @@
         selections (.getSelectedBufferRanges editor)
         start-row (find-start-row lines (aget cursor "row"))
         end-row (find-end-row lines (aget cursor "row"))
-        adjusted-cursor {:cursor-line (- (aget cursor "row") start-row)
-                         :cursor-x (aget cursor "column")}
+        js-opts (js-obj "cursorLine" (- (aget cursor "row") start-row)
+                        "cursorX" (aget cursor "column"))
         lines-to-infer (subvec lines start-row end-row)
         text-to-infer (str (join "\n" lines-to-infer) "\n")
         parinfer-fn (if (= mode :paren-mode)
-                      paren-mode/format-text
-                      indent-mode/format-text)
+                      parinfer.parenMode
+                      parinfer.indentMode)
         cached-result (if (= mode :paren-mode)
                         (.get paren-mode-cache text-to-infer)
                         (.get indent-mode-cache text-to-infer))
-        result (if cached-result
-                 cached-result
-                 (parinfer-fn text-to-infer adjusted-cursor))
-        inferred-text (if (:valid? result) (:text result) false)]
+        js-result (if cached-result
+                    cached-result
+                    (parinfer-fn text-to-infer js-opts))
+        parinfer-success? (true? (aget js-result "success"))
+        inferred-text (if parinfer-success? (aget js-result "text") false)]
     ;; add this result to the cache if necessary
     (when-not cached-result
       (if (= mode :paren-mode)
-        (.set paren-mode-cache text-to-infer result)
-        (.set indent-mode-cache text-to-infer result)))
+        (.set paren-mode-cache text-to-infer js-result)
+        (.set indent-mode-cache text-to-infer js-result)))
     ;; update the text buffer
     (when (and (string? inferred-text)
                (not= inferred-text text-to-infer))
@@ -256,7 +257,7 @@
       (.setSelectedBufferRanges editor selections))
     ;; update the status bar
     (if (and (= mode :paren-mode)
-             (not (:valid? result)))
+             (not parinfer-success?))
       (set-status-bar-warning!)
       (clear-status-bar-warning!))))
 
@@ -327,9 +328,9 @@
     ;; run Paren Mode on the file if we recognize the extension.
     (when init-parinfer?
       (let [current-text (.getText editor)
-            paren-mode-result (paren-mode/format-text current-text)
-            paren-mode-text (:text paren-mode-result)
-            paren-mode-succeeded? (:valid? paren-mode-result)
+            js-paren-mode-result (parinfer.parenMode current-text)
+            paren-mode-succeeded? (true? (aget js-paren-mode-result "success"))
+            paren-mode-text (aget js-paren-mode-result "text")
             text-delta (lines-diff current-text paren-mode-text)
             paren-mode-changed-the-file? (and paren-mode-succeeded?
                                               (not (zero? (:diff text-delta))))]

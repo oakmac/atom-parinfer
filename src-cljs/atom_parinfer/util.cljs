@@ -39,12 +39,6 @@
 ;; String
 ;;------------------------------------------------------------------------------
 
-(defn ends-with [train caboose]
-  (let [train-len (aget train "length")
-        caboose-len (aget caboose "length")
-        end-of-train (.substring train (- train-len caboose-len))]
-    (= end-of-train caboose)))
-
 (defn lines-diff
   "Returns a map {:diff X, :same Y} of the difference in lines between two texts.
    NOTE: this is probably a reinvention of clojure.data/diff"
