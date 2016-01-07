@@ -1,3 +1,6 @@
+## 1.3.0
+* Upgrade to Parinfer v1.4.0
+
 ## 1.0.0
 * Upgrade to the new JavaScript version of Parinfer. Everything should be much faster now.
 
