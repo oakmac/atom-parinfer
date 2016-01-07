@@ -12,9 +12,12 @@
 ;; JS Requires
 ;;------------------------------------------------------------------------------
 
-(def fs (js/require "fs-plus"))
-(def parinfer (js/require "parinfer"))
+(def fs          (js/require "fs-plus"))
+(def package     (js/require "../package.json"))
+(def parinfer    (js/require "parinfer"))
 (def SimpleCache (js/require "simple-lru-cache"))
+
+(def version (aget package "version"))
 
 ;;------------------------------------------------------------------------------
 ;; Get Editor State
@@ -390,7 +393,7 @@
 ;;------------------------------------------------------------------------------
 
 (defn- activate [_state]
-  (js-log "Parinfer package activated.")
+  (js-log (str "atom-parinfer " version " activated"))
 
   (load-file-extensions!)
 
