@@ -1,3 +1,6 @@
+## 1.4.0
+* Allow user to skip the open file dialogs via config flag. [Issue #34]
+
 ## 1.3.0
 * Upgrade to Parinfer v1.4.0
 
@@ -22,3 +25,4 @@
 
 [#18]:https://github.com/oakmac/atom-parinfer/issues/18
 [#24]:https://github.com/oakmac/atom-parinfer/issues/24
+[Issue #34]:https://github.com/oakmac/atom-parinfer/issues/34

@@ -24,6 +24,8 @@ as normal and Parinfer will infer the intended paren structure.
 
 ## Usage
 
+### File Extensions
+
 Once the package has been installed, it will automatically load in the
 background when you open Atom and watch for file extensions found in a config
 file. The default file extensions are: `.clj` `.cljs` `.cljc` `.lfe` `.rkt`
@@ -31,10 +33,27 @@ file. The default file extensions are: `.clj` `.cljs` `.cljc` `.lfe` `.rkt`
 You can edit these file extensions by going to Packages --> Parinfer --> Edit
 File Extensions in the menu.
 
-When a file is first opened, Parinfer runs [Paren Mode] on the entire file and
-then turns on [Indent Mode] if Paren Mode succeeded (ie: the file contained
-balanced parens). See [Fixing existing files] for more information on why this
-happens.
+### Opening a File
+
+When a file with a recognized extension is first opened, Parinfer runs [Paren
+Mode] on the entire file and one of three things will happen (in order of
+likelihood):
+
+* **The file was unchanged.** You will be automatically dropped into Indent
+  Mode. This is the most likely scenario once you start using Parinfer
+  regularly.
+* **Paren Mode changed the file.** You will be prompted to apply the changes
+  (recommended) and then dropped into Indent Mode. This is most likely to happen
+  when you first start using Parinfer on an existing file.
+* **Paren Mode failed.** This is almost certainly caused by having unbalanced
+  parens in your file (ie: it will not compile). A prompt will show and you will
+  be dropped into Paren Mode in order to fix the problem.
+
+Running Paren Mode is a necessary first step before Indent Mode can be safely
+turned on. See [Fixing existing files] for more information.
+
+If you do not want to be prompted when opening a new file, the prompts can be
+disabled via [config file].
 
 Please be aware that - depending on the indentation and formatting in your Lisp
 files - this initial processing may result in a large diff the first time it
@@ -43,6 +62,8 @@ unlikely to result in a large diff (or any diff at all). You may even discover
 that applying Paren Mode to a file can result in [catching very hard-to-find
 bugs] in your existing code! As usual, developers are responsible for reviewing
 their diffs before a code commit :)
+
+### Hotkeys and Status Bar
 
 Use hotkey <kbd>Ctrl</kbd>+<kbd>(</kbd> to turn Parinfer on and to toggle
 between Indent Mode and Paren Mode.
@@ -55,6 +76,10 @@ is turned off.
 If you are in Paren Mode and Parinfer detects unbalanced parens (ie: code that
 will not compile), the status bar text will be red. Note that this will never
 happen in Indent Mode because Parinfer ensures that parens are always balanced.
+Also note that there is a [known bug] with this feature due to the "parent
+expression" hack explained below.
+
+### Future Features
 
 More options and configuration settings are planned for future releases. Browse
 the [issues] for an idea of future features. Create a new issue if you can think
@@ -65,15 +90,14 @@ of a useful feature :)
 This extension uses a trick for performance reasons that may act oddly in
 certain circumstances. It assumes that an open paren followed by a "word"
 character - ie: regex `^\(\w` - at the start of a line is the start of a new
-expression and tells the Parinfer algorithm to start analyzing from there until
-the next line that matches the same regex. In 99% of cases, this is probably a
-correct assumption, but might break inside multi-line strings or other
-non-standard circumstances (hat-tip to [Shaun] for pointing out the multi-line
-string case). This is tracked at [Issue #9]; please add to that if you
-experience problems.
+"parent expression" and tells the Parinfer algorithm to start analyzing from
+there until the next line that matches the same regex. In 99% of cases, this is
+probably a correct assumption, but might break inside multi-line strings or
+other non-standard circumstances. This is tracked at [Issue #9]; please add to
+that if you experience problems.
 
-atom-parinfer keeps a small [LRU cache] of Indent Mode and Paren Mode results
-for performance reasons. The size of the cache is small and unlikely to cause
+atom-parinfer keeps a [LRU cache] of Indent Mode and Paren Mode results for
+performance reasons. The size of the cache is small and unlikely to cause
 problems on modern hardware. If you run into memory issues using atom-parinfer,
 please open an issue.
 
@@ -97,7 +121,8 @@ Future features include:
 [Atom]:https://atom.io/
 [issues]:https://github.com/oakmac/atom-parinfer/issues
 [catching very hard-to-find bugs]:https://github.com/oakmac/atom-parinfer/commit/d4b49ec2636fd0530f3f2fbca9924db6c97d3a8f
-[Shaun]:https://github.com/shaunlebron/
+[known bug]:https://github.com/oakmac/atom-parinfer/issues/32
+[config file]:https://github.com/oakmac/atom-parinfer/issues/34#issuecomment-170146141
 [Issue #9]:https://github.com/oakmac/atom-parinfer/issues/9
 [Paren Mode]:http://shaunlebron.github.io/parinfer/#paren-mode
 [Indent Mode]:http://shaunlebron.github.io/parinfer/#indent-mode

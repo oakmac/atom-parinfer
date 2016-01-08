@@ -1,4 +1,4 @@
-(defproject atom-parinfer "1.3.0"
+(defproject atom-parinfer "1.4.0"
   :description "Parinfer extension for the Atom editor."
 
   :license {:name "ISC License"
