@@ -3,6 +3,7 @@
     [atom-parinfer.util :refer [always-nil by-id js-log lines-diff log
                                 log-atom-changes one? qs remove-el!]]
     [clojure.string :refer [join split-lines trim]]
+    [clojure.walk :refer [keywordize-keys]]
     [goog.string :as gstring]
     [lowline.functions :refer [debounce]]))
 
@@ -18,6 +19,24 @@
 (def SimpleCache (js/require "simple-lru-cache"))
 
 (def version (aget package "version"))
+
+;;------------------------------------------------------------------------------
+;; Load Config (optional)
+;;------------------------------------------------------------------------------
+
+(def default-config
+  {:show-open-file-dialog? true})
+
+(def config-file (str (fs.getHomeDirectory) "/.atom-parinfer-config.json"))
+
+(def config
+  (try
+    (->> (.readFileSync fs config-file)
+         js/JSON.parse
+         js->clj
+         keywordize-keys
+         (merge default-config))
+    (catch js/Object e default-config)))
 
 ;;------------------------------------------------------------------------------
 ;; Get Editor State
@@ -330,7 +349,8 @@
 
     ;; run Paren Mode on the file if we recognize the extension.
     (when init-parinfer?
-      (let [current-text (.getText editor)
+      (let [show-open-file-dialog? (:show-open-file-dialog? config)
+            current-text (.getText editor)
             js-paren-mode-result (parinfer.parenMode current-text)
             paren-mode-succeeded? (true? (aget js-paren-mode-result "success"))
             paren-mode-text (aget js-paren-mode-result "text")
@@ -338,26 +358,40 @@
             paren-mode-changed-the-file? (and paren-mode-succeeded?
                                               (not (zero? (:diff text-delta))))]
         (cond
-          ;; Paren Mode could not run (probably because the file has unmatched delimiters)
-          ;; inform them and then drop into Paren Mode
-          (not paren-mode-succeeded?)
+          ;; Paren Mode failed and they want to see the dialog.
+          ;; Inform them and then drop into Paren Mode.
+          (and (not paren-mode-succeeded?) show-open-file-dialog?)
           (js/atom.confirm
             (js-obj "message" (str current-file " has unbalanced parens")
                     "detailedMessage" (paren-mode-failed-msg current-file)
                     "buttons" (js-obj "Ok" #(swap! editor-states assoc editor-id :paren-mode))))
 
-          ;; Paren Mode changed the file; prompt them to make changes
-          paren-mode-changed-the-file?
+          ;; Paren Mode failed and they do not want to see the dialog.
+          ;; Drop them into Paren Mode silently to fix the problem.
+          (and (not paren-mode-succeeded?) (not show-open-file-dialog?))
+          (swap! editor-states assoc editor-id :paren-mode)
+
+          ;; Paren Mode changed the file and they want to see the dialog.
+          ;; Inform them of the change and then drop into Indent Mode if they click "Yes".
+          (and paren-mode-changed-the-file? show-open-file-dialog?)
           (js/atom.confirm
             (js-obj "message" (str "Parinfer will change " current-file)
                     "detailedMessage" (confirm-paren-mode-msg current-file (:diff text-delta))
                     "buttons" (js-obj "Yes" (fn []
                                               (.setText editor paren-mode-text)
                                               (swap! editor-states assoc editor-id :indent-mode))
+                                      ;; do nothing if they click "No"
                                       "No" always-nil)))
 
-          ;; else Paren Mode succeeded and the file was unchanged
-          ;; drop them into Indent Mode
+          ;; Paren Mode changed the file and they do not want to see the dialog.
+          ;; Update the file and drop them into Indent Mode silently.
+          (and paren-mode-changed-the-file? (not show-open-file-dialog?))
+          (do (.setText editor paren-mode-text)
+              (swap! editor-states assoc editor-id :indent-mode))
+
+          ;; Paren Mode succeeded and the file was unchanged.
+          ;; Drop them into Indent Mode silently.
+          ;; NOTE: this is the most likely case for someone using Parinfer regularly
           :else
           (swap! editor-states assoc editor-id :indent-mode))))))
 
@@ -393,7 +427,7 @@
 ;;------------------------------------------------------------------------------
 
 (defn- activate [_state]
-  (js-log (str "atom-parinfer " version " activated"))
+  (js-log (str "atom-parinfer v" version " activated"))
 
   (load-file-extensions!)
 
