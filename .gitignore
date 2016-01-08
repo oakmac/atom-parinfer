@@ -1,7 +1,8 @@
 .DS_Store
 npm-debug.log
 
-target/
+# ignore CLJS compiler target folder
+target
 
 # ignore diff files
 *.diff
