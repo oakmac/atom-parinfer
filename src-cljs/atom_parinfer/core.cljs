@@ -241,7 +241,7 @@
 
 (defn- apply-parinfer* [editor mode]
   (let [current-txt (.getText editor)
-        lines (into [] (.split current-txt "\n"))
+        lines (split-lines current-txt)
         ;; add a newline at the end of the file if there is not one
         ;; https://github.com/oakmac/atom-parinfer/issues/12
         lines (if-not (= "" (peek lines)) (conj lines "") lines)
