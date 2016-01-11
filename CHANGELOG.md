@@ -1,3 +1,6 @@
+## 1.6.0
+* Fix index out of range vector error. [Issue #42]
+
 ## 1.5.0
 * Fix a bug with CRLF lines. [Issue #37]
 
@@ -30,3 +33,4 @@
 [#24]:https://github.com/oakmac/atom-parinfer/issues/24
 [Issue #34]:https://github.com/oakmac/atom-parinfer/issues/34
 [Issue #37]:https://github.com/oakmac/atom-parinfer/issues/37
+[Issue #42]:https://github.com/oakmac/atom-parinfer/issues/42
