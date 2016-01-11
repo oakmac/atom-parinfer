@@ -207,10 +207,12 @@
 (def indent-mode-cache (SimpleCache. (js-obj "maxSize" lru-cache-size)))
 (def paren-mode-cache (SimpleCache. (js-obj "maxSize" lru-cache-size)))
 
+;; NOTE: this is the "parent expression" hack
 ;; https://github.com/oakmac/atom-parinfer/issues/9
 (defn- is-parent-expression-line?
   [line]
-  (.match line #"^\(\w"))
+  (and (string? line)
+       (.match line #"^\([a-zA-Z]")))
 
 (defn- find-start-row
   "Returns the index of the first line we need to send to Parinfer."
@@ -221,7 +223,7 @@
     ;; else "look up" until we find the closest parent expression
     (loop [idx (dec cursor-idx)]
       (if (or (zero? idx)
-              (is-parent-expression-line? (nth lines idx)))
+              (is-parent-expression-line? (nth lines idx false)))
         idx
         (recur (dec idx))))))
 
@@ -235,7 +237,7 @@
       ;; "look down" until we find the start of the next parent expression
       (loop [idx (inc cursor-idx)]
         (if (or (== idx max-idx)
-                (is-parent-expression-line? (nth lines idx)))
+                (is-parent-expression-line? (nth lines idx false)))
           idx
           (recur (inc idx)))))))
 
