@@ -1,3 +1,6 @@
+## 1.7.0
+* Add new `split-lines` function. [PR #43]
+
 ## 1.6.0
 * Fix index out of range vector error. [Issue #42]
 
@@ -34,3 +37,4 @@
 [Issue #34]:https://github.com/oakmac/atom-parinfer/issues/34
 [Issue #37]:https://github.com/oakmac/atom-parinfer/issues/37
 [Issue #42]:https://github.com/oakmac/atom-parinfer/issues/42
+[PR #43]:https://github.com/oakmac/atom-parinfer/pull/43
