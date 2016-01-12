@@ -1,6 +1,5 @@
 (ns atom-parinfer.util
   (:require
-    [clojure.string :refer [split-lines]]
     [goog.dom :as gdom]))
 
 ;;------------------------------------------------------------------------------
@@ -38,6 +37,12 @@
 ;;------------------------------------------------------------------------------
 ;; String
 ;;------------------------------------------------------------------------------
+
+(defn split-lines
+  "Same as clojure.string/split-lines, except it doesn't remove empty lines at
+  the end of the text."
+  [text]
+  (vec (.split text #"\r?\n")))
 
 (defn lines-diff
   "Returns a map {:diff X, :same Y} of the difference in lines between two texts.
