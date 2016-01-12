@@ -87,11 +87,11 @@ of a useful feature :)
 
 ## Known Limitations
 
-This extension uses a trick for performance reasons that may act oddly in
-certain circumstances. It assumes that an open paren followed by a "word"
-character - ie: regex `^\(\w` - at the start of a line is the start of a new
+This extension uses a hack for performance reasons that may act oddly in certain
+circumstances. It assumes that an open paren followed by an alpha character -
+ie: regex `^\([a-zA-Z]` - at the start of a line is the beginning of a new
 "parent expression" and tells the Parinfer algorithm to start analyzing from
-there until the next line that matches the same regex. In 99% of cases, this is
+there until the next line that matches the same regex. Most of the time this is
 probably a correct assumption, but might break inside multi-line strings or
 other non-standard circumstances. This is tracked at [Issue #9]; please add to
 that if you experience problems.
