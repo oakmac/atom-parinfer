@@ -1,3 +1,6 @@
+## 1.8.0
+* Upgrade to Parinfer v1.5.1
+
 ## 1.7.0
 * Add new `split-lines` function. [PR #43]
 
