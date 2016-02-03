@@ -1,3 +1,6 @@
+## 1.9.0
+* Upgrade to Parinfer v1.5.2
+
 ## 1.8.0
 * Upgrade to Parinfer v1.5.1
 
