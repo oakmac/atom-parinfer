@@ -63,11 +63,12 @@
 (def utf8 "utf8")
 
 (def default-file-extensions
-  #{".clj"   ;; Clojure
-    ".cljs"  ;; ClojureScript
-    ".cljc"  ;; Clojure + ClojureScript
-    ".lfe"   ;; Lisp Flavored Erlang
-    ".rkt"}) ;; Racket
+  #{".clj"  ;; Clojure
+    ".cljs" ;; ClojureScript
+    ".cljc" ;; Clojure + ClojureScript
+    ".lfe"  ;; Lisp Flavored Erlang
+    ".rkt"  ;; Racket
+    ".el"}) ;; Emacs Lisp
 
 (def default-file-extension-config
   (str "# one file extension per line please :)\n"
