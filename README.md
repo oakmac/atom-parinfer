@@ -97,14 +97,6 @@ probably a correct assumption, but might break inside multi-line strings or
 other non-standard circumstances. This is tracked at [Issue #9]; please add to
 that if you experience problems.
 
-atom-parinfer keeps a [LRU cache] of Indent Mode and Paren Mode results for
-performance reasons. The size of the cache is small and unlikely to cause
-problems on modern hardware. If you run into memory issues using atom-parinfer,
-please open an issue.
-
-Please take note: this is a new extension and Parinfer itself is very new.
-Please report bugs and feature requests in the [issues].
-
 ## Future Features
 
 Future features include:
@@ -128,5 +120,4 @@ Future features include:
 [Paren Mode]:http://shaunlebron.github.io/parinfer/#paren-mode
 [Indent Mode]:http://shaunlebron.github.io/parinfer/#indent-mode
 [Fixing existing files]:http://shaunlebron.github.io/parinfer/#fixing-existing-files
-[LRU cache]:https://en.wikipedia.org/wiki/Cache_algorithms#LRU
 [ISC License]:LICENSE.md

@@ -1,3 +1,9 @@
+## 1.10.0
+* Upgrade to Parinfer v1.5.3
+* Add `.el` (Emacs Lisp) as a default file extension
+* Remove the LRU cache
+* Fix a bug with the parent expression hack. [Issue #35]
+
 ## 1.9.0
 * Upgrade to Parinfer v1.5.2
 
@@ -43,4 +49,5 @@
 [Issue #34]:https://github.com/oakmac/atom-parinfer/issues/34
 [Issue #37]:https://github.com/oakmac/atom-parinfer/issues/37
 [Issue #42]:https://github.com/oakmac/atom-parinfer/issues/42
+[Issue #35]:https://github.com/oakmac/atom-parinfer/issues/35
 [PR #43]:https://github.com/oakmac/atom-parinfer/pull/43

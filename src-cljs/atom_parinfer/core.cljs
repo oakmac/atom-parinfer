@@ -16,7 +16,6 @@
 (def fs          (js/require "fs-plus"))
 (def package     (js/require "../package.json"))
 (def parinfer    (js/require "parinfer"))
-(def SimpleCache (js/require "simple-lru-cache"))
 
 (def version (aget package "version"))
 
@@ -203,11 +202,6 @@
 ;; Apply Parinfer
 ;;------------------------------------------------------------------------------
 
-;; keep some small LRU caches of the Parinfer results
-(def lru-cache-size 100)
-(def indent-mode-cache (SimpleCache. (js-obj "maxSize" lru-cache-size)))
-(def paren-mode-cache (SimpleCache. (js-obj "maxSize" lru-cache-size)))
-
 ;; NOTE: this is the "parent expression" hack
 ;; https://github.com/oakmac/atom-parinfer/issues/9
 (defn- is-parent-expression-line?
@@ -231,12 +225,17 @@
 (defn- find-end-row
   "Returns the index of the last line we need to send to Parinfer."
   [lines cursor-idx]
-  (let [max-idx (dec (count lines))]
-    (if
-      ;; are we on the last line?
-      (== cursor-idx max-idx) cursor-idx
-      ;; "look down" until we find the start of the next parent expression
-      (loop [idx (inc cursor-idx)]
+  (let [cursor-plus-1 (inc cursor-idx)
+        cursor-plus-2 (inc cursor-plus-1)
+        max-idx (dec (count lines))]
+    ;; are we near the last line?
+    (if (or (== max-idx cursor-idx)
+            (== max-idx cursor-plus-1)
+            (== max-idx cursor-plus-2))
+      ;; if so, just return the max idx
+      max-idx
+      ;; else "look down" until we find the start of the next parent expression
+      (loop [idx cursor-plus-2]
         (if (or (== idx max-idx)
                 (is-parent-expression-line? (nth lines idx false)))
           idx
@@ -256,22 +255,11 @@
                         "cursorX" (aget cursor "column"))
         lines-to-infer (subvec lines start-row end-row)
         text-to-infer (str (join "\n" lines-to-infer) "\n")
-        parinfer-fn (if (= mode :paren-mode)
-                      parinfer.parenMode
-                      parinfer.indentMode)
-        cached-result (if (= mode :paren-mode)
-                        (.get paren-mode-cache text-to-infer)
-                        (.get indent-mode-cache text-to-infer))
-        js-result (if cached-result
-                    cached-result
-                    (parinfer-fn text-to-infer js-opts))
+        js-result (if (= mode :paren-mode)
+                    (parinfer.parenMode text-to-infer js-opts)
+                    (parinfer.indentMode text-to-infer js-opts))
         parinfer-success? (true? (aget js-result "success"))
         inferred-text (if parinfer-success? (aget js-result "text") false)]
-    ;; add this result to the cache if necessary
-    (when-not cached-result
-      (if (= mode :paren-mode)
-        (.set paren-mode-cache text-to-infer js-result)
-        (.set indent-mode-cache text-to-infer js-result)))
     ;; update the text buffer
     (when (and (string? inferred-text)
                (not= inferred-text text-to-infer))
@@ -291,14 +279,10 @@
     (when (and editor
                (aget editor "id")
                (not (is-autocomplete-showing?)))
-      (cond
-        (= :indent-mode (get @editor-states (aget editor "id")))
-        (apply-parinfer* editor :indent-mode)
-
-        (= :paren-mode (get @editor-states (aget editor "id")))
-        (apply-parinfer* editor :paren-mode)
-
-        :else nil))))
+      (condp = (get @editor-states (aget editor "id"))
+        :indent-mode (apply-parinfer* editor :indent-mode)
+        :paren-mode  (apply-parinfer* editor :paren-mode)
+        nil))))
 
 ;; NOTE: 10ms seems to work well for the debounce interval.
 ;; I don't notice any lag when typing on my machine and the result displays fast
