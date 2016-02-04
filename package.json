@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "fs-plus": "2.8.1",
-    "parinfer": "1.5.2",
+    "parinfer": "1.5.3",
     "simple-lru-cache": "0.0.2"
   }
 }
