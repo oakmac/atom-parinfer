@@ -66,10 +66,10 @@ their diffs before a code commit :)
 
 ### Hotkeys and Status Bar
 
-Use hotkey <kbd>Ctrl</kbd>+<kbd>(</kbd> to turn Parinfer on and to toggle
-between Indent Mode and Paren Mode.
-
-Use hotkey <kbd>Ctrl</kbd>+<kbd>)</kbd> to disable Pariner.
+|  Command              | Windows/Linux                | Mac                         |
+|-----------------------|-----------------------------:|-----------------------------|
+| Turn on / Toggle Mode | <kbd>Ctrl</kbd>+<kbd>(</kbd> | <kbd>Cmd</kbd>+<kbd>(</kbd> |
+| Turn off              | <kbd>Ctrl</kbd>+<kbd>)</kbd> | <kbd>Cmd</kbd>+<kbd>)</kbd> |
 
 The status bar will indicate which mode you are in or show nothing if Parinfer
 is turned off.

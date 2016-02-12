@@ -1,3 +1,6 @@
+## 1.11.0 - 2016-02-12
+* Change key bindings to use <kbd>Cmd</kbd> on Mac
+
 ## 1.10.0
 * Upgrade to Parinfer v1.5.3
 * Add `.el` (Emacs Lisp) as a default file extension

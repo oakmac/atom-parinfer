@@ -1,6 +1,14 @@
 {
-  "atom-workspace": {
+  ".platform-linux atom-workspace": {
     "ctrl-(": "parinfer:toggleMode",
     "ctrl-)": "parinfer:disable"
+  },
+  ".platform-win32 atom-workspace": {
+    "ctrl-(": "parinfer:toggleMode",
+    "ctrl-)": "parinfer:disable"
+  },
+  ".platform-darwin atom-workspace": {
+    "cmd-(": "parinfer:toggleMode",
+    "cmd-)": "parinfer:disable"
   }
 }
