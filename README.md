@@ -105,6 +105,27 @@ Future features include:
 * JSHint-like comments to tell Parinfer to ignore sections of your code ([Issue #6](https://github.com/oakmac/atom-parinfer/issues/6))
 * A menu option to run Paren Mode on all files in a directory ([Issue #21](https://github.com/oakmac/atom-parinfer/issues/21))
 
+## Development
+
+Setup the build:
+
+```
+npm install
+lein cljsbuild auto
+```
+
+Connect the build to Atom (assuming repo is at `~`):
+
+```
+cd ~
+ln -s ~/atom-parinfer ~/.atom/packages/
+```
+
+Then run Atom on a Lisp file.  Some development notes:
+
+- `View > Developer > Reload Window` (to reload plugin changes)
+- `View > Developer > Toggle Developer Tools` (to see console)
+
 ## License
 
 [ISC License]
