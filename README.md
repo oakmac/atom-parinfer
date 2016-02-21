@@ -107,19 +107,16 @@ Future features include:
 
 ## Plugin Development Setup
 
-Setup the build:
-
-```
-npm install
-lein cljsbuild auto
-```
-
-Symlink the repo to the Atom packages folder (assuming repo is at
-`~/atom-parinfer`):
-
-```
+```sh
+# clone this repo to your homedir
 cd ~
+git clone https://github.com/oakmac/atom-parinfer.git
+
+# symlink the repo to the Atom packages folder
 ln -s ~/atom-parinfer ~/.atom/packages/
+
+# compile CLJS files
+lein cljsbuild auto
 ```
 
 Then run Atom on a Lisp file.  Some development notes:
