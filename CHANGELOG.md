@@ -9,48 +9,48 @@
 ## 1.11.0 - 2016-02-12
 * Change key bindings to use <kbd>Cmd</kbd> on Mac
 
-## 1.10.0
+## 1.10.0 - 2016-02-04
 * Upgrade to Parinfer v1.5.3
 * Add `.el` (Emacs Lisp) as a default file extension
 * Remove the LRU cache
 * Fix a bug with the parent expression hack. [Issue #35]
 
-## 1.9.0
+## 1.9.0 - 2016-02-02
 * Upgrade to Parinfer v1.5.2
 
-## 1.8.0
+## 1.8.0 - 2016-01-25
 * Upgrade to Parinfer v1.5.1
 
-## 1.7.0
+## 1.7.0 - 2016-01-11
 * Add new `split-lines` function. [PR #43]
 
-## 1.6.0
+## 1.6.0 - 2016-01-11
 * Fix index out of range vector error. [Issue #42]
 
-## 1.5.0
+## 1.5.0 - 2016-01-09
 * Fix a bug with CRLF lines. [Issue #37]
 
-## 1.4.0
+## 1.4.0 - 2016-01-08
 * Allow user to skip the open file dialogs via config flag. [Issue #34]
 
-## 1.3.0
+## 1.3.0 - 2016-01-06
 * Upgrade to Parinfer v1.4.0
 
-## 1.0.0
+## 1.0.0 - 2015-12-23
 * Upgrade to the new JavaScript version of Parinfer. Everything should be much faster now.
 
-## 0.10.0
+## 0.10.0 - 2015-12-19
 * Prompt the user when first opening a file if Paren Mode didn't succeed or
   needs to make changes to the file. Issues [#18] and [#24].
 
-## 0.6.0
+## 0.6.0 - 2015-11-13
 * Re-write of atom-parinfer in ClojureScript
 
-## 0.3.0
+## 0.3.0 - 2015-11-08
 * Correctly watch the cursor for changes
 * Cleaner event triggering
 
-## 0.2.0 - First Release
+## 0.2.0 - 2015-11-08
 * Initial release!
 * Parinfer now usable in a major text editor. One small step for parenthesis,
   one giant leap for LISP ;)
