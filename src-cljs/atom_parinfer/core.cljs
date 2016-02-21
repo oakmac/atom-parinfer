@@ -258,9 +258,8 @@
         js-result (if (= mode :paren-mode)
                     (parinfer.parenMode text-to-infer js-opts)
                     (parinfer.indentMode text-to-infer js-opts))
-        new-cursor (js-obj
-                     "row" (aget cursor "row")
-                     "column" (aget js-result "cursorX"))
+        new-cursor (js-obj "column" (aget js-result "cursorX")
+                           "row" (aget cursor "row"))
         parinfer-success? (true? (aget js-result "success"))
         inferred-text (if parinfer-success? (aget js-result "text") false)
         selection? (not (.isEmpty (aget selections 0)))]
@@ -291,11 +290,11 @@
         :paren-mode  (apply-parinfer* editor :paren-mode)
         nil))))
 
-;; NOTE: 10ms seems to work well for the debounce interval.
+;; NOTE: 20ms seems to work well for the debounce interval.
 ;; I don't notice any lag when typing on my machine and the result displays fast
 ;; enough that it doesn't feel "delayed".
 ;; Feel free to play around with it on your machine if that is not the case.
-(def debounce-interval-ms 10)
+(def debounce-interval-ms 20)
 (def debounced-apply-parinfer
   (debounce apply-parinfer! debounce-interval-ms))
 
