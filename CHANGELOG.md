@@ -1,3 +1,7 @@
+## 1.12.0 - 2016-02-21
+* Upgrade to Parinfer v1.6.1
+* Increase debounce interval to 20ms
+
 ## 1.11.0 - 2016-02-12
 * Change key bindings to use <kbd>Cmd</kbd> on Mac
 
