@@ -258,16 +258,23 @@
         js-result (if (= mode :paren-mode)
                     (parinfer.parenMode text-to-infer js-opts)
                     (parinfer.indentMode text-to-infer js-opts))
+        new-cursor (js-obj
+                     "row" (aget cursor "row")
+                     "column" (aget js-result "cursorX"))
         parinfer-success? (true? (aget js-result "success"))
-        inferred-text (if parinfer-success? (aget js-result "text") false)]
+        inferred-text (if parinfer-success? (aget js-result "text") false)
+        selection? (not (.isEmpty (aget selections 0)))]
+
     ;; update the text buffer
     (when (and (string? inferred-text)
                (not= inferred-text text-to-infer))
       (.setTextInBufferRange editor (array (array start-row 0) (array end-row 0))
                                     inferred-text
                                     (js-obj "undo" "skip"))
-      (.setCursorBufferPosition editor cursor)
-      (.setSelectedBufferRanges editor selections))
+      (if selection?
+        (.setSelectedBufferRanges editor selections)
+        (.setCursorBufferPosition editor new-cursor)))
+
     ;; update the status bar
     (if (and (= mode :paren-mode)
              (not parinfer-success?))
