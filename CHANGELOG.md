@@ -1,3 +1,6 @@
+## 1.13.0 - 2016-02-21
+* Fix issue with multi-cursor editing. [Issue #49]
+
 ## 1.12.1 - 2016-02-21
 * Upgrade to ClojureScript 1.7.228
 * Replace `rodnaph/lowline` with Google Closure functions
@@ -61,4 +64,5 @@
 [Issue #37]:https://github.com/oakmac/atom-parinfer/issues/37
 [Issue #42]:https://github.com/oakmac/atom-parinfer/issues/42
 [Issue #35]:https://github.com/oakmac/atom-parinfer/issues/35
+[Issue #49]:https://github.com/oakmac/atom-parinfer/issues/49
 [PR #43]:https://github.com/oakmac/atom-parinfer/pull/43
