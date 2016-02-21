@@ -261,8 +261,7 @@
         new-cursor (js-obj "column" (aget js-result "cursorX")
                            "row" (aget cursor "row"))
         parinfer-success? (true? (aget js-result "success"))
-        inferred-text (if parinfer-success? (aget js-result "text") false)
-        selection? (not (.isEmpty (aget selections 0)))]
+        inferred-text (if parinfer-success? (aget js-result "text") false)]
 
     ;; update the text buffer
     (when (and (string? inferred-text)
@@ -270,9 +269,8 @@
       (.setTextInBufferRange editor (array (array start-row 0) (array end-row 0))
                                     inferred-text
                                     (js-obj "undo" "skip"))
-      (if selection?
-        (.setSelectedBufferRanges editor selections)
-        (.setCursorBufferPosition editor new-cursor)))
+      (.setCursorBufferPosition editor new-cursor)
+      (.setSelectedBufferRanges editor selections))
 
     ;; update the status bar
     (if (and (= mode :paren-mode)
