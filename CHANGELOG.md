@@ -1,3 +1,7 @@
+## 1.12.1 - 2016-02-21
+* Upgrade to ClojureScript 1.7.228
+* Replace `rodnaph/lowline` with Google Closure functions
+
 ## 1.12.0 - 2016-02-21
 * Upgrade to Parinfer v1.6.1
 * Increase debounce interval to 20ms

@@ -4,8 +4,8 @@
                                 one? qs remove-el! split-lines]]
     [clojure.string :refer [join trim]]
     [clojure.walk :refer [keywordize-keys]]
-    [goog.string :as gstring]
-    [lowline.functions :refer [debounce]]))
+    [goog.functions :refer [debounce]]
+    [goog.string :as gstring]))
 
 (declare load-file-extensions! toggle-mode!)
 
