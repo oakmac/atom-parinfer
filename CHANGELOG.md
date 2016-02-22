@@ -1,3 +1,6 @@
+## 1.14.0 - 2016-02-21
+* Correctly apply the cursor result from Parinfer.
+
 ## 1.13.0 - 2016-02-21
 * Fix issue with multi-cursor editing. [Issue #49]
 
