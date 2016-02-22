@@ -247,8 +247,12 @@
         ;; add a newline at the end of the file if there is not one
         ;; https://github.com/oakmac/atom-parinfer/issues/12
         lines (if-not (= "" (peek lines)) (conj lines "") lines)
+        cursors (.getCursorBufferPositions editor)
+        multiple-cursors? (> (aget cursors "length") 1)
         cursor (.getCursorBufferPosition editor)
         selections (.getSelectedBufferRanges editor)
+        selection? (not (.isEmpty (aget selections 0)))
+        single-cursor? (not (or selection? multiple-cursors?))
         start-row (find-start-row lines (aget cursor "row"))
         end-row (find-end-row lines (aget cursor "row"))
         js-opts (js-obj "cursorLine" (- (aget cursor "row") start-row)
@@ -269,8 +273,13 @@
       (.setTextInBufferRange editor (array (array start-row 0) (array end-row 0))
                                     inferred-text
                                     (js-obj "undo" "skip"))
-      (.setCursorBufferPosition editor new-cursor)
-      (.setSelectedBufferRanges editor selections))
+
+      (if single-cursor?
+        ;; update the cursor position with the new cursor from Parinfer
+        (.setCursorBufferPosition editor new-cursor)
+        ;; else just re-apply the selection (or multiple cusors) we had before
+        ;; the update and ignore the cursor result from Parinfer
+        (.setSelectedBufferRanges editor selections)))
 
     ;; update the status bar
     (if (and (= mode :paren-mode)
