@@ -16,21 +16,8 @@
   color: @text-color-error;
 }
 
-// NOTE: this is not ready yet, but wanted to save it for future reference
-//       https://github.com/oakmac/atom-parinfer/issues/26
-//
-// @endParenOpacity: 0.5;
-//
-// atom-text-editor::shadow {
-//   span.punctuation.section.map.end.clojure {
-//     opacity: @endParenOpacity;
-//   }
-//
-//   span.punctuation.section.set.end.clojure {
-//     opacity: @endParenOpacity;
-//   }
-//
-//   span.punctuation.section.expression.end.clojure {
-//     opacity: @endParenOpacity;
-//   }
-// }
+atom-text-editor::shadow {
+  span.paren-trail {
+    opacity: 0.5;
+  }
+}

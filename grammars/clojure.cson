@@ -1,6 +1,3 @@
-# Clojure Grammar for Atom
-# (copied from https://github.com/atom/language-clojure/blob/master/grammars/clojure.cson)
-
 'scopeName': 'source.clojure'
 'fileTypes': [
   'boot'
@@ -13,7 +10,7 @@
 ]
 'foldingStartMarker': '\\(\\s*$'
 'foldingStopMarker': '^\\s*\\)'
-'name': 'Clojure'
+'name': 'Clojure (w/ Parinfer)'
 'patterns': [
   {
     'include': '#comment'
@@ -142,9 +139,11 @@
     'beginCaptures':
       '1':
         'name': 'punctuation.section.map.begin.clojure'
-    'end': '(\\})'
+    'end': '(\\}(?=[\\}\\]\\)\\s]*(?:;|\\n)))|(\\})'
     'endCaptures':
       '1':
+        'name': 'punctuation.section.map.end.clojure.paren-trail'
+      '2':
         'name': 'punctuation.section.map.end.clojure'
     'name': 'meta.map.clojure'
     'patterns': [
@@ -159,9 +158,11 @@
         'beginCaptures':
           '1':
             'name': 'punctuation.section.metadata.map.begin.clojure'
-        'end': '(\\})'
+        'end': '(\\}(?=[\\}\\]\\)\\s]*(?:;|\\n)))|(\\})'
         'endCaptures':
           '1':
+            'name': 'punctuation.section.metadata.map.end.clojure.paren-trail'
+          '2':
             'name': 'punctuation.section.metadata.map.end.clojure'
         'name': 'meta.metadata.map.clojure'
         'patterns': [
@@ -189,12 +190,16 @@
     'beginCaptures':
       '1':
         'name': 'punctuation.section.expression.begin.clojure'
-    'end': '(\\))(\\n)?'
+    'end': '(\\))(\\n)|(\\)(?=[\\}\\]\\)\\s]*(?:;|\\n)))|(\\))'
     'endCaptures':
       '1':
-        'name': 'punctuation.section.expression.end.clojure'
+        'name': 'punctuation.section.expression.end.clojure.paren-trail'
       '2':
         'name': 'meta.after-expression.clojure'
+      '3':
+        'name': 'punctuation.section.expression.end.clojure.paren-trail'
+      '4':
+        'name': 'punctuation.section.expression.end.clojure'
     'name': 'meta.quoted-expression.clojure'
     'patterns': [
       {
@@ -218,9 +223,11 @@
     'beginCaptures':
       '1':
         'name': 'punctuation.section.set.begin.clojure'
-    'end': '(\\})'
+    'end': '(\\}(?=[\\}\\]\\)\\s]*(?:;|\\n)))|(\\})'
     'endCaptures':
       '1':
+        'name': 'punctuation.section.set.end.clojure.paren-trail'
+      '2':
         'name': 'punctuation.section.set.end.clojure'
     'name': 'meta.set.clojure'
     'patterns': [
@@ -233,12 +240,16 @@
     'beginCaptures':
       '1':
         'name': 'punctuation.section.expression.begin.clojure'
-    'end': '(\\))(\\n)?'
+    'end': '(\\))(\\n)|(\\)(?=[\\}\\]\\)\\s]*(?:;|\\n)))|(\\))'
     'endCaptures':
       '1':
-        'name': 'punctuation.section.expression.end.clojure'
+        'name': 'punctuation.section.expression.end.clojure.paren-trail'
       '2':
         'name': 'meta.after-expression.clojure'
+      '3':
+        'name': 'punctuation.section.expression.end.clojure.paren-trail'
+      '4':
+        'name': 'punctuation.section.expression.end.clojure'
     'name': 'meta.expression.clojure'
     'patterns': [
       {
@@ -338,9 +349,11 @@
     'beginCaptures':
       '1':
         'name': 'punctuation.section.vector.begin.clojure'
-    'end': '(\\])'
+    'end': '(\\](?=[\\}\\]\\)\\s]*(?:;|\\n)))|(\\])'
     'endCaptures':
       '1':
+        'name': 'punctuation.section.vector.end.clojure.paren-trail'
+      '2':
         'name': 'punctuation.section.vector.end.clojure'
     'name': 'meta.vector.clojure'
     'patterns': [
