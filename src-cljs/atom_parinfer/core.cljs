@@ -2,7 +2,7 @@
   (:require
     [atom-parinfer.util :refer [always-nil by-id js-log lines-diff log
                                 one? qs remove-el! split-lines]]
-    [clojure.string :refer [join trim]]
+    [clojure.string :refer [join trim triml]]
     [clojure.walk :refer [keywordize-keys]]
     [goog.functions :refer [debounce]]
     [goog.string :as gstring]))
@@ -422,6 +422,39 @@
       ;; run parinfer in their new mode
       (debounced-apply-parinfer))))
 
+(defn remove-spaces-after-cursor
+  [line cursor-x]
+  (let [left (subs line 0 cursor-x)
+        right (subs line cursor-x)]
+    (str left (triml right))))
+
+(defn- auto-indent-newline []
+  (let [editor (js/atom.workspace.getActiveTextEditor)
+        cursors (.getCursorBufferPositions editor)]
+    (when (= 1 (aget cursors "length"))
+      (let [cursor (.getCursorBufferPosition editor)
+            cursorLineNo (aget cursor "row")
+            cursorX (aget cursor "column")
+
+            text (.getText editor)
+            lines (split-lines text)
+            lines2 (update lines cursorLineNo remove-spaces-after-cursor cursorX)
+            text2 (join "\n" lines2)
+
+            js-opts (js-obj "cursorLine" cursorLineNo "cursorX" cursorX)
+            js-result (parinfer.parenMode text2 js-opts)
+            new-cursor (js-obj "column" (aget js-result "cursorX")
+                               "row" cursorLineNo)
+            result-lines (split-lines (aget js-result "text"))
+            indented-line (nth result-lines cursorLineNo)
+            replace-range (array (array cursorLineNo 0)
+                                 (array (inc cursorLineNo) 0))]
+        (.setTextInBufferRange editor
+                               replace-range
+                               (str indented-line "\n")
+                               (js-obj "undo" "skip"))
+        (.setCursorBufferPosition editor new-cursor)))))
+
 ;;------------------------------------------------------------------------------
 ;; Package-required events
 ;;------------------------------------------------------------------------------
@@ -439,6 +472,9 @@
     (js-obj "parinfer:editFileExtensions" edit-file-extensions!
             "parinfer:disable" disable!
             "parinfer:toggleMode" toggle-mode!))
+
+  (js/atom.commands.add "atom-text-editor"
+    (js-obj "editor:newline" auto-indent-newline))
 
   ;; Sometimes the editor events can all load before Atom catches up with the DOM
   ;; resulting in an initial empty status bar.
