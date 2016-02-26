@@ -59,7 +59,7 @@
 ## 0.2.0 - 2015-11-08
 * Initial release!
 * Parinfer now usable in a major text editor. One small step for parenthesis,
-  one giant leap for LISP ;)
+  one giant leap for Lisp ;)
 
 [#18]:https://github.com/oakmac/atom-parinfer/issues/18
 [#24]:https://github.com/oakmac/atom-parinfer/issues/24
