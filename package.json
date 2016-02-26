@@ -2,7 +2,7 @@
   "name": "Parinfer",
   "main": "./lib/atom-parinfer.js",
   "version": "1.14.0",
-  "description": "Automatically infer closing parens based on indentation. An essential tool for writing LISP code.",
+  "description": "Automatically infer closing parens based on indentation. An essential tool for writing Lisp code.",
   "keywords": [
     "Parinfer",
     "Paredit",
