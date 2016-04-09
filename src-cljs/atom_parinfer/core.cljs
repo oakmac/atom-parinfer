@@ -65,6 +65,8 @@
   #{".clj"  ;; Clojure
     ".cljs" ;; ClojureScript
     ".cljc" ;; Clojure + ClojureScript
+    ".edn"  ;; Extensible Data Notation
+    ".boot" ;; Boot build script (Clojure build framework)
     ".lfe"  ;; Lisp Flavored Erlang
     ".rkt"  ;; Racket
     ".el"}) ;; Emacs Lisp
