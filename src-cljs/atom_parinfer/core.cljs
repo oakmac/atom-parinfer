@@ -69,6 +69,10 @@
     ".boot" ;; Boot build script (Clojure build framework)
     ".lfe"  ;; Lisp Flavored Erlang
     ".rkt"  ;; Racket
+    ".scm"  ;; Scheme
+    ".lisp" ;; Lisp
+    ".lsp"  ;; Lisp
+    ".cl"   ;; Common Lisp
     ".el"}) ;; Emacs Lisp
 
 (def default-file-extension-config
