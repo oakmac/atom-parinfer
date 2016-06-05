@@ -80,6 +80,33 @@ happen in Indent Mode because Parinfer ensures that parens are always balanced.
 Also note that there is a [known bug] with this feature due to the "parent
 expression" hack explained below.
 
+### Dim Trailing Parens
+
+We try to visually communicate which close-parens are inferred by dimming them,
+as per Parinfer's design.
+
+```less
+atom-text-editor::shadow {
+  span.punctuation.section.end.trailing.clojure {
+    opacity: 0.4; // <-- desired opacity of trailing parens
+  }
+}
+```
+
+This is currently only supported for Clojure using
+the [language-clojure] >= 0.21.0. Core packages cannot be upgraded, so you
+may have to use the `apm` command to install it as a user package:
+
+```
+$ apm install language-clojure
+```
+
+Adding this feature to other language packages for Lisp can be done by porting
+the [extra style classes that we added to language-clojure][style-extras].
+
+[language-clojure]:https://github.com/atom/language-clojure
+[style-extras]:https://github.com/atom/language-clojure/pull/37/files
+
 ## Known Limitations
 
 This extension uses a hack for performance reasons that may act oddly in certain
