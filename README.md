@@ -80,12 +80,6 @@ happen in Indent Mode because Parinfer ensures that parens are always balanced.
 Also note that there is a [known bug] with this feature due to the "parent
 expression" hack explained below.
 
-### Future Features
-
-More options and configuration settings are planned for future releases. Browse
-the [issues] for an idea of future features. Create a new issue if you can think
-of a useful feature :)
-
 ## Known Limitations
 
 This extension uses a hack for performance reasons that may act oddly in certain
@@ -104,6 +98,10 @@ Future features include:
 * JSHint-like comments to automatically "turn on" Parinfer for files ([Issue #5](https://github.com/oakmac/atom-parinfer/issues/5))
 * JSHint-like comments to tell Parinfer to ignore sections of your code ([Issue #6](https://github.com/oakmac/atom-parinfer/issues/6))
 * A menu option to run Paren Mode on all files in a directory ([Issue #21](https://github.com/oakmac/atom-parinfer/issues/21))
+
+More options and configuration settings are planned for future releases. Browse
+the [issues] for an idea of future features. Create a new issue if you can think
+of a useful feature :)
 
 ## Plugin Development Setup
 
