@@ -7,7 +7,7 @@
     [goog.functions :refer [debounce]]
     [goog.string :as gstring]))
 
-(declare load-file-extensions! toggle-mode!)
+(declare toggle-mode!)
 
 ;;------------------------------------------------------------------------------
 ;; JS Requires
@@ -110,20 +110,20 @@
     (reduce parse-file-extension-line #{} lines)))
 
 (defn- write-default-file-extensions-config! []
-  (fs.writeFile file-extension-file default-file-extension-config
-    (fn [js-err]
-      (if js-err
-        () ;; TODO: handle error here
-        ;; load the new file extensions
-        (load-file-extensions!)))))
+  (fs.writeFile file-extension-file default-file-extension-config))
 
-(defn- load-file-extensions-callback [js-err txt]
-  (if js-err
-    (write-default-file-extensions-config!)
-    (reset! file-extensions (parse-file-extension-config txt))))
-
+;; NOTE: it is important that this file system read is done synchronously
+;; see: https://github.com/oakmac/atom-parinfer/issues/60
 (defn- load-file-extensions! []
-  (fs.readFile file-extension-file utf8 load-file-extensions-callback))
+  (let [file-text (try (fs.readFileSync file-extension-file utf8)
+                       (catch js/Error _js-err false))]
+    (if (string? file-text)
+      ;; parse and load the file extensions
+      (reset! file-extensions (parse-file-extension-config file-text))
+      ;; else there was an issue loading the file, create one with the default extensions
+      ;; NOTE: we do not need to set the file-extensions atom in this case
+      ;;       because it is already set to the default extensions
+      (write-default-file-extensions-config!))))
 
 ;; reload their file extensions when the editor is saved
 (defn- after-file-extension-tab-opened [editor]

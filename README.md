@@ -28,8 +28,7 @@ as normal and Parinfer will infer the intended paren structure.
 
 Once the package has been installed, it will automatically load in the
 background when you open Atom and watch for file extensions found in a config
-file. The default file extensions are: `.clj` `.cljs` `.cljc` `.lfe` `.rkt`
-`.el`
+file. The default file extensions are [listed here].
 
 You can edit these file extensions by going to Packages --> Parinfer --> Edit
 File Extensions in the menu.
@@ -156,6 +155,7 @@ Then run Atom on a Lisp file.  Some development notes:
 [here]:http://shaunlebron.github.io/parinfer/
 [Parinfer]:http://shaunlebron.github.io/parinfer/
 [Atom]:https://atom.io/
+[listed here]:https://github.com/oakmac/atom-parinfer/blob/master/src-cljs/atom_parinfer/core.cljs#L65-L76
 [issues]:https://github.com/oakmac/atom-parinfer/issues
 [catching very hard-to-find bugs]:https://github.com/oakmac/atom-parinfer/commit/d4b49ec2636fd0530f3f2fbca9924db6c97d3a8f
 [known bug]:https://github.com/oakmac/atom-parinfer/issues/32
