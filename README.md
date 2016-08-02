@@ -81,7 +81,7 @@ expression" hack explained below.
 
 ### Dim Trailing Parens
 
-We try to visually communicate which close-parens are inferred by dimming them,
+As of Atom 1.9, we visually communicate which close-parens are inferred by dimming them,
 as per Parinfer's design.
 
 ```less
@@ -92,18 +92,9 @@ atom-text-editor::shadow {
 }
 ```
 
-This is currently only supported for Clojure using
-the [language-clojure] >= 0.21.0. Core packages cannot be upgraded, so you
-may have to use the `apm` command to install it as a user package:
-
-```
-$ apm install language-clojure
-```
-
 Adding this feature to other language packages for Lisp can be done by porting
 the [extra style classes that we added to language-clojure][style-extras].
 
-[language-clojure]:https://github.com/atom/language-clojure
 [style-extras]:https://github.com/atom/language-clojure/pull/37/files
 
 ## Known Limitations
