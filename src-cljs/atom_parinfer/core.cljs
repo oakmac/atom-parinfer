@@ -4,6 +4,7 @@
                                 one? qs remove-el! split-lines]]
     [clojure.string :refer [join trim]]
     [clojure.walk :refer [keywordize-keys]]
+    [goog.array :as garray]
     [goog.functions :refer [debounce]]
     [goog.string :as gstring]))
 
@@ -42,6 +43,7 @@
 ;;------------------------------------------------------------------------------
 
 (def autocomplete-el-selector "atom-text-editor.is-focused.autocomplete-active")
+
 (defn- is-autocomplete-showing? []
   (if (qs autocomplete-el-selector) true false))
 
@@ -196,6 +198,10 @@
   "Keep track of all the editor tabs and their Parinfer states."
   (atom {}))
 
+;;------------------------------------------------------------------------------
+;; Update Status Bar
+;;------------------------------------------------------------------------------
+
 (defn- on-change-editor-states [_atm _kwd _old-states new-states]
   (let [editor-id (get-active-editor-id)
         current-editor-state (get new-states editor-id)]
@@ -203,6 +209,41 @@
       (update-status-bar! current-editor-state))))
 
 (add-watch editor-states :status-bar on-change-editor-states)
+
+;;------------------------------------------------------------------------------
+;; Set Status Classes
+;;------------------------------------------------------------------------------
+
+(def indent-mode-class "indent-mode-76f60")
+(def paren-mode-class "paren-mode-f2763")
+
+(defn- set-status-class!
+  "Sets the current parinfer status class on the editor element.
+   Used for CSS selecting based on status."
+  [js-editor mode]
+  (when (and js-editor
+             (aget js-editor "editorElement")
+             (aget js-editor "editorElement" "classList"))
+    (let [class-list (aget js-editor "editorElement" "classList")]
+      (condp = mode
+        :indent-mode
+        (do (.add class-list indent-mode-class)
+            (.remove class-list paren-mode-class))
+
+        :paren-mode
+        (do (.add class-list paren-mode-class)
+            (.remove class-list indent-mode-class))
+
+        ;; else disabled
+        (.remove class-list indent-mode-class paren-mode-class)))))
+
+(defn- toggle-status-classes! [_atm _kwd _old-states new-states]
+  (garray/forEach (js/atom.workspace.getTextEditors)
+    (fn [js-editor]
+      (when-let [current-state (get new-states (aget js-editor "id"))]
+        (set-status-class! js-editor current-state)))))
+
+(add-watch editor-states :toggle-status-classes toggle-status-classes!)
 
 ;;------------------------------------------------------------------------------
 ;; Apply Parinfer
