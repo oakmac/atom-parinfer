@@ -1,3 +1,10 @@
+***Aug 2016 IMPORTANT:*** We are looking for feedback about adding some
+functionality to atom-parinfer. Please see [Issue #68]. Thank you :)
+
+[Issue #68]:https://github.com/oakmac/atom-parinfer/issues/68
+
+------------
+
 # Parinfer for Atom
 
 A [Parinfer] package for [Atom].
