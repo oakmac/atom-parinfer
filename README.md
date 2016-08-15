@@ -81,11 +81,10 @@ expression" hack explained below.
 
 ### Dim Trailing Parens
 
-As of Atom 1.9, we visually communicate which close-parens are inferred by dimming them,
-as per Parinfer's design.
+As of Atom 1.9, inferred closing parens are dimmed in Indent Mode:
 
 ```less
-atom-text-editor::shadow {
+atom-text-editor.indent-mode-76f60::shadow {
   span.punctuation.section.end.trailing.clojure {
     opacity: 0.4; // <-- desired opacity of trailing parens
   }
