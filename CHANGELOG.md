@@ -1,3 +1,8 @@
+## 1.16.0 - 2016-08-14
+* Bump to parinfer.js v1.8.1
+* Only dim inferred parens in Indent Mode. [Issue #65]
+* Add `previewCursorScope` option (default is off). [Issue #67]
+
 ## 1.15.0 - 2016-06-12
 * Add CSS for dimming trailing parens. [PR #59]
 * Fix issue with loading file extensions on startup. [Issue #60]
@@ -73,5 +78,7 @@
 [Issue #35]:https://github.com/oakmac/atom-parinfer/issues/35
 [Issue #49]:https://github.com/oakmac/atom-parinfer/issues/49
 [Issue #60]:https://github.com/oakmac/atom-parinfer/issues/60
+[Issue #65]:https://github.com/oakmac/atom-parinfer/issues/65
+[Issue #67]:https://github.com/oakmac/atom-parinfer/issues/67
 [PR #43]:https://github.com/oakmac/atom-parinfer/pull/43
 [PR #59]:https://github.com/oakmac/atom-parinfer/pull/59
