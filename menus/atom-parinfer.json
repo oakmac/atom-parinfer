@@ -8,11 +8,11 @@
           "submenu": [
             {
               "label": "Edit File Extensions",
-              "command": "parinfer:editFileExtensions"
+              "command": "parinfer:edit-file-extensions"
             },
             {
               "label": "Toggle Mode",
-              "command": "parinfer:toggleMode"
+              "command": "parinfer:toggle-mode"
             },
             {
               "label": "Disable",
