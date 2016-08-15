@@ -25,7 +25,8 @@
 ;;------------------------------------------------------------------------------
 
 (def default-config
-  {:show-open-file-dialog? true})
+  {:preview-cursor-scope? false
+   :show-open-file-dialog? true})
 
 (def config-file (str (fs.getHomeDirectory) "/.atom-parinfer-config.json"))
 
@@ -303,7 +304,8 @@
         start-row (find-start-row lines (aget cursor "row"))
         end-row (find-end-row lines (aget cursor "row"))
         js-opts (js-obj "cursorLine" (- (aget cursor "row") start-row)
-                        "cursorX" (aget cursor "column"))
+                        "cursorX" (aget cursor "column")
+                        "previewCursorScope" (true? (:preview-cursor-scope? config)))
         lines-to-infer (subvec lines start-row end-row)
         text-to-infer (str (join "\n" lines-to-infer) "\n")
         js-result (if (= mode :paren-mode)
@@ -396,7 +398,7 @@
 
     ;; run Paren Mode on the file if we recognize the extension.
     (when init-parinfer?
-      (let [show-open-file-dialog? (:show-open-file-dialog? config)
+      (let [show-open-file-dialog? (true? (:show-open-file-dialog? config))
             current-text (.getText editor)
             js-paren-mode-result (parinfer.parenMode current-text)
             paren-mode-succeeded? (true? (aget js-paren-mode-result "success"))
