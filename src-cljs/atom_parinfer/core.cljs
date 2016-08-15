@@ -485,9 +485,9 @@
 
   ;; add package events
   (js/atom.commands.add "atom-workspace"
-    (js-obj "parinfer:editFileExtensions" edit-file-extensions!
+    (js-obj "parinfer:edit-file-extensions" edit-file-extensions!
             "parinfer:disable" disable!
-            "parinfer:toggleMode" toggle-mode!))
+            "parinfer:toggle-mode" toggle-mode!))
 
   ;; Sometimes the editor events can all load before Atom catches up with the DOM
   ;; resulting in an initial empty status bar.
