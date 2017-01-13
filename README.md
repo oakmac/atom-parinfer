@@ -40,14 +40,15 @@ Mode] on the entire file and one of three things will happen (in order of
 likelihood):
 
 * **The file was unchanged.** You will be automatically dropped into Indent
-  Mode. This is the most likely scenario once you start using Parinfer
+  Mode. This is the most common scenario once you start using Parinfer
   regularly.
 * **Paren Mode changed the file.** You will be prompted to apply the changes
-  (recommended) and then dropped into Indent Mode. This is most likely to happen
-  when you first start using Parinfer on an existing file.
-* **Paren Mode failed.** This is almost certainly caused by having unbalanced
-  parens in your file (ie: it will not compile). A prompt will show and you will
-  be dropped into Paren Mode in order to fix the problem.
+  (recommended) and then dropped into Indent Mode. This is common the first time
+  you use Parinfer on a file.
+* **Paren Mode failed.** This scenario is uncommon and almost certainly means
+  you have unbalanced parens in your file (ie: it will not compile). A prompt
+  will show and you will be dropped into Paren Mode in order to fix the syntax
+  problem.
 
 Running Paren Mode is a necessary first step before Indent Mode can be safely
 turned on. See [Fixing existing files] for more information.
@@ -78,23 +79,6 @@ will not compile), the status bar text will be red. Note that this will never
 happen in Indent Mode because Parinfer ensures that parens are always balanced.
 Also note that there is a [known bug] with this feature due to the "parent
 expression" hack explained below.
-
-### Dim Trailing Parens
-
-As of Atom 1.9, inferred closing parens are dimmed in Indent Mode:
-
-```less
-atom-text-editor.indent-mode-76f60::shadow {
-  span.punctuation.section.end.trailing.clojure {
-    opacity: 0.4; // <-- desired opacity of trailing parens
-  }
-}
-```
-
-Adding this feature to other language packages for Lisp can be done by porting
-the [extra style classes that we added to language-clojure][style-extras].
-
-[style-extras]:https://github.com/atom/language-clojure/pull/37/files
 
 ## Known Limitations
 
