@@ -1,10 +1,3 @@
-***Aug 2016 IMPORTANT:*** We are looking for feedback about adding some
-functionality to atom-parinfer. Please see [Issue #68]. Thank you :)
-
-[Issue #68]:https://github.com/oakmac/atom-parinfer/issues/68
-
-------------
-
 # Parinfer for Atom
 
 A [Parinfer] package for [Atom].
@@ -152,7 +145,7 @@ Then run Atom on a Lisp file.  Some development notes:
 [here]:http://shaunlebron.github.io/parinfer/
 [Parinfer]:http://shaunlebron.github.io/parinfer/
 [Atom]:https://atom.io/
-[listed here]:https://github.com/oakmac/atom-parinfer/blob/master/src-cljs/atom_parinfer/core.cljs#L65-L76
+[listed here]:https://github.com/oakmac/atom-parinfer/blob/master/src-cljs/atom_parinfer/core.cljs#L67-L79
 [issues]:https://github.com/oakmac/atom-parinfer/issues
 [catching very hard-to-find bugs]:https://github.com/oakmac/atom-parinfer/commit/d4b49ec2636fd0530f3f2fbca9924db6c97d3a8f
 [known bug]:https://github.com/oakmac/atom-parinfer/issues/32
