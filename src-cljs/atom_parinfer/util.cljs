@@ -7,14 +7,14 @@
 ;;------------------------------------------------------------------------------
 
 (defn js-log
-  "Logs a JavaScript thing."
-  [js-thing]
-  (js/console.log js-thing))
+  "Logs JavaScript things."
+  [& js-things]
+  (.apply js/console.log js/console (to-array js-things)))
 
 (defn log
-  "Logs a Clojure thing."
-  [clj-thing]
-  (js-log (pr-str clj-thing)))
+  "Logs Clojure things."
+  [& clj-things]
+  (js-log (apply pr-str clj-things)))
 
 (defn log-atom-changes [atm kwd old-value new-value]
   (log old-value)
