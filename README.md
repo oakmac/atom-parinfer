@@ -121,19 +121,18 @@ of a useful feature :)
 
 ## Plugin Development Setup
 
+First, make sure `apm` is installed, by choosing “Install Shell Commands” from the Atom menu. Then run these commands:
+
 ```sh
-# clone this repo to your homedir
-cd ~
-git clone https://github.com/oakmac/atom-parinfer.git
+# clone and install a development version of this package to the specified folder
+apm develop Parinfer ~/my_dev_projects/atom-parinfer/
 
-# symlink the repo to the Atom packages folder
-ln -s ~/atom-parinfer ~/.atom/packages/
-
-# compile CLJS files
+# watch and compile CLJS files
+cd ~/my_dev_projects/atom-parinfer/
 lein cljsbuild auto
 ```
 
-Then run Atom on a Lisp file.  Some development notes:
+Then open Atom, choose `View > Developer > Open In Dev Mode…`, and select a Lisp file or project folder. This will open a new window in Development mode, in which the `Parinfer` development package you just installed is enabled. In this window, the following menu commands will be helpful:
 
 - `View > Developer > Reload Window` (to reload plugin changes)
 - `View > Developer > Toggle Developer Tools` (to see console)
