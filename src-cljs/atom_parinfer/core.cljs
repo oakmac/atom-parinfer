@@ -471,6 +471,11 @@
       ;; run parinfer in their new mode
       (debounced-apply-parinfer))))
 
+(defn- log-atom-config! []
+  (js-log (js/atom.config.get "Parinfer.fileExtensions"))
+  (js-log (js/atom.config.get "Parinfer.previewCursorScope"))
+  (js-log (js/atom.config.get "Parinfer.showFileOpenWarningDialog")))
+
 ;;------------------------------------------------------------------------------
 ;; Package-required events
 ;;------------------------------------------------------------------------------
@@ -487,7 +492,8 @@
   (js/atom.commands.add "atom-workspace"
     (js-obj "parinfer:edit-file-extensions" edit-file-extensions!
             "parinfer:disable" disable!
-            "parinfer:toggle-mode" toggle-mode!))
+            "parinfer:toggle-mode" toggle-mode!
+            "parinfer:log-atom-config" log-atom-config!))
 
   ;; Sometimes the editor events can all load before Atom catches up with the DOM
   ;; resulting in an initial empty status bar.
@@ -504,9 +510,26 @@
 ;;------------------------------------------------------------------------------
 
 (set! js/module.exports
-  (js-obj "activate" activate
-          "deactivate" always-nil
-          "serialize" always-nil))
+  (clj->js
+    {"activate" activate
+     "deactivate" always-nil
+     "serialize" always-nil
+     "config"
+     {"fileExtensions" {"order" 1
+                        "title" "File Extensions to Enable For"
+                        "type" "array"
+                        "default" [".clj", ".cljs"]
+                        "items" {"type" "string"}}
+      "previewCursorScope" {"order" 2
+                            "description" "When the cursor is on an empty line, show close-brackets after the cursor, as if you had already typed a character."
+                            "type" "boolean"
+                            "default" false}
+      "showFileOpenWarningDialog" {"order" 3
+                                   "description" "Show a dialog when opening a file with unbalanced parentheses or poor indentation."
+                                   "type" "boolean"
+                                   "default" true}}}))
+
+
 
 ;; noop - needed for :nodejs CLJS build
 (set! *main-cli-fn* always-nil)
