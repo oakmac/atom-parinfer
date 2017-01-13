@@ -105,6 +105,8 @@ of a useful feature :)
 
 ## Plugin Development Setup
 
+Install [Leiningen].
+
 ```sh
 # clone this repo to your homedir
 cd ~
@@ -138,4 +140,5 @@ Then run Atom on a Lisp file.  Some development notes:
 [Paren Mode]:http://shaunlebron.github.io/parinfer/#paren-mode
 [Indent Mode]:http://shaunlebron.github.io/parinfer/#indent-mode
 [Fixing existing files]:http://shaunlebron.github.io/parinfer/#fixing-existing-files
+[Leiningen]:http://leiningen.org
 [ISC License]:LICENSE.md
