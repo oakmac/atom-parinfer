@@ -1,3 +1,6 @@
+## 1.17.0 - 2017-01-12
+* Update deprecated CSS selectors. [Issue #73] and [Issue #74]
+
 ## 1.16.0 - 2016-08-14
 * Bump to parinfer.js v1.8.1
 * Only dim inferred parens in Indent Mode. [Issue #65]
@@ -80,5 +83,7 @@
 [Issue #60]:https://github.com/oakmac/atom-parinfer/issues/60
 [Issue #65]:https://github.com/oakmac/atom-parinfer/issues/65
 [Issue #67]:https://github.com/oakmac/atom-parinfer/issues/67
+[Issue #73]:https://github.com/oakmac/atom-parinfer/issues/73
+[Issue #74]:https://github.com/oakmac/atom-parinfer/issues/74
 [PR #43]:https://github.com/oakmac/atom-parinfer/pull/43
 [PR #59]:https://github.com/oakmac/atom-parinfer/pull/59
