@@ -5,10 +5,13 @@
             :url "https://github.com/oakmac/atom-parinfer/blob/master/LICENSE.md"
             :distribution :repo}
 
-  :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/clojurescript "1.9.198"]]
+  :dependencies
+    [[org.clojure/clojure "1.8.0"]
+     [clojure-future-spec "1.9.0-alpha16-1"]
+     [org.clojure/clojurescript "1.9.562"]
+     [binaryage/oops "0.5.4"]]
 
-  :plugins [[lein-cljsbuild "1.1.2"]]
+  :plugins [[lein-cljsbuild "1.1.6"]]
 
   :source-paths ["src"]
 
@@ -17,13 +20,14 @@
 
   :cljsbuild
     {:builds
-      {:main
-        {:source-paths ["src-cljs"]
-         :compiler
-          {:output-to "./lib/atom-parinfer.js"
-           :optimizations :simple
-           :language-in :ecmascript5
-           :language-out :ecmascript5
-           :target :nodejs
-           :hashbang false
-           :pretty-print true}}}})
+     [{:id "prod"
+       :source-paths ["src-cljs"]
+       :compiler
+         {:output-to "./lib/atom-parinfer.js"
+          :optimizations :advanced
+          :language-in :ecmascript5
+          :language-out :ecmascript5
+          :target :nodejs
+          :hashbang false
+          :pretty-print false
+          :pseudo-names false}}]})
