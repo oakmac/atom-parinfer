@@ -1,3 +1,6 @@
+## 1.18.0 - 2017-06-03
+* Use Google Closure Advanced Mode optimizations. Significantly reduce plugin file size.
+
 ## 1.17.0 - 2017-01-12
 * Update deprecated CSS selectors. [Issue #73] and [Issue #74]
 
