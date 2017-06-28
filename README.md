@@ -91,6 +91,12 @@ probably a correct assumption, but might break inside multi-line strings or
 other non-standard circumstances. This is tracked at [Issue #9]; please add to
 that if you experience problems.
 
+Interestingly, [Shaun] discovered that this hack is not new. Someone else used
+the same approach [36 years ago] :)
+
+[Shaun]:https://github.com/shaunlebron/
+[36 years ago]:images/zwei-top-level-expression-hack.png
+
 ## Future Features
 
 Future features include:
