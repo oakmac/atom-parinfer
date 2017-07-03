@@ -18,6 +18,6 @@
   },
   "dependencies": {
     "fs-plus": "2.8.1",
-    "parinfer": "1.8.1"
+    "parinfer": "2.3.1"
   }
 }
