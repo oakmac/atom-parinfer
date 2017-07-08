@@ -26,7 +26,8 @@
 
 (def default-config
   {:preview-cursor-scope? false
-   :show-open-file-dialog? true})
+   :show-open-file-dialog? true
+   :force-balance? true})
 
 (def config-file (str (fs.getHomeDirectory) "/.atom-parinfer-config.json"))
 
@@ -305,7 +306,8 @@
         end-row (find-end-row lines (aget cursor "row"))
         js-opts (js-obj "cursorLine" (- (aget cursor "row") start-row)
                         "cursorX" (aget cursor "column")
-                        "previewCursorScope" (true? (:preview-cursor-scope? config)))
+                        "previewCursorScope" (true? (:preview-cursor-scope? config))
+                        "forceBalance" (true? (:force-balance? config)))
         lines-to-infer (subvec lines start-row end-row)
         text-to-infer (str (join "\n" lines-to-infer) "\n")
         js-result (if (= mode :paren-mode)
