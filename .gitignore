@@ -7,6 +7,9 @@ target
 # ignore diff files
 *.diff
 
+# ignore node_modules
+node_modules
+
 # I don't want to accidentally commit my test files
 example1.cljs
 example2.cljs
