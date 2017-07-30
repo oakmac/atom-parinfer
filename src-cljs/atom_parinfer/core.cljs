@@ -28,9 +28,9 @@
 ;;------------------------------------------------------------------------------
 
 (def default-config
-  {:preview-cursor-scope? false
+  {:force-balance? true
    :show-open-file-dialog? true
-   :use-smart-mode? true})
+   :use-smart-mode? false})
 
 
 (def config-file (str (ocall fs "getHomeDirectory") "/.atom-parinfer-config.json"))
@@ -202,7 +202,9 @@
 
 (defn- link-text [state]
   (case state
-    :indent-mode "Parinfer: Indent"
+    :indent-mode (if (:use-smart-mode? config)
+                   "Parinfer: Smart"
+                   "Parinfer: Indent")
     :paren-mode  "Parinfer: Paren"
     ""))
 
@@ -323,7 +325,9 @@
           (recur (inc idx)))))))
 
 
-(defn- atom-changes->parinfer-changes [js-atom-changes start-row]
+(defn- atom-changes->parinfer-changes
+  "Convert Atom's changes object into the format that Parinfer expects."
+  [js-atom-changes start-row]
   (if (and (object? js-atom-changes)
            (array? (oget js-atom-changes "?changes")))
     (ocall (oget js-atom-changes "changes") "map"
@@ -354,37 +358,40 @@
         start-row (find-start-row lines (oget cursor "row"))
         end-row (find-end-row lines (oget cursor "row"))
 
-        cursor-line (- (oget cursor "row") start-row)
+        adjusted-cursor-line (- (oget cursor "row") start-row)
         cursor-x (oget cursor "column")
 
-        previous-cursor? (map? @previous-cursor)
-
-        js-opts (js-obj "cursorLine" cursor-line
+        js-opts (js-obj "cursorLine" adjusted-cursor-line
                         "cursorX" cursor-x
+                        "prevCursorLine" (:cursor-line @previous-cursor nil)
+                        "prevCursorX" (:cursor-x @previous-cursor nil)
 
-                        "prevCursorLine" (if previous-cursor? (:cursor-line @previous-cursor))
-                        "prevCursorX" (if previous-cursor? (:cursor-x @previous-cursor))
-
+                        ;; TODO: handle selectionStartLine
                         ;; "selectionStartLine" 0
                         "changes" (atom-changes->parinfer-changes js-atom-changes start-row)
 
-                        "forceBalance" true
+                        "forceBalance" (:force-balance? config)
                         "partialResult" false)
 
+        ;; save this cursor information for the next iteration
         ;; TODO: we need to clear the previous-cursor atom when changing parent expressions
-        _ (reset! previous-cursor {:cursor-line cursor-line
+        _ (reset! previous-cursor {:cursor-line adjusted-cursor-line
                                    :cursor-x cursor-x})
 
         lines-to-infer (subvec lines start-row end-row)
         text-to-infer (str (str/join "\n" lines-to-infer) "\n")
         js-result (if (= mode :paren-mode)
                     (ocall parinfer "parenMode" text-to-infer js-opts)
-                    (ocall parinfer "smartMode" text-to-infer js-opts))
-        new-cursor (js-obj "column" (oget js-result "cursorX")
-                           "row" (oget cursor "row"))
+                    (if (:use-smart-mode? config)
+                      (ocall parinfer "smartMode" text-to-infer js-opts)
+                      (ocall parinfer "indentMode" text-to-infer js-opts)))
         parinfer-success? (true? (oget js-result "success"))
-        ;; parinfer-success? false
-        inferred-text (if parinfer-success? (oget js-result "text") false)]
+        ;; TODO: save tabStops here
+        new-cursor (if parinfer-success?
+                     (js-obj "column" (oget js-result "cursorX")
+                             "row" (+ (oget js-result "cursorLine") start-row))
+                     nil)
+        inferred-text (if parinfer-success? (oget js-result "text") nil)]
 
     ;; update the text buffer
     (when (and (string? inferred-text)
@@ -393,7 +400,7 @@
                                               inferred-text
                                               (js-obj "undo" "skip"))
 
-      (if single-cursor?
+      (if (and single-cursor? new-cursor)
         ;; update the cursor position with the new cursor from Parinfer
         (ocall js-editor "setCursorBufferPosition" new-cursor)
         ;; else just re-apply the selection (or multiple cusors) we had before
@@ -456,29 +463,17 @@
        "Press Ctrl + ( to switch to Indent Mode once the file is balanced."))
 
 
-
-
-
-
-
-
-(def js-timeout nil)
+(def js-change-timeout nil)
 
 
 (defn- on-did-change-text [js-txt-changes]
-  (js/clearTimeout js-timeout)
-  (set! js-timeout (js/setTimeout (fn [] (apply-parinfer! js-txt-changes)) 5)))
+  (js/clearTimeout js-change-timeout)
+  (set! js-change-timeout (js/setTimeout (fn [] (apply-parinfer! js-txt-changes)) 1)))
 
 
 (defn- on-change-cursor-position [_js-cursor-changes]
-  (js/clearTimeout js-timeout)
-  (set! js-timeout (js/setTimeout (fn [] (apply-parinfer! nil)) 5)))
-
-
-
-
-
-
+  (js/clearTimeout js-change-timeout)
+  (set! js-change-timeout (js/setTimeout (fn [] (apply-parinfer! nil)) 1)))
 
 
 (defn- hello-editor
@@ -491,13 +486,11 @@
     ;; add this editor state to our atom
     (swap! *editor-states assoc editor-id :disabled)
 
-    ;; listen to editor change events
-    ;; (ocall js-editor "onDidChangeSelectionRange" debounced-apply-parinfer)
-
-
-    (ocall js-buffer "onDidChangeText" on-did-change-text)
-    (ocall js-editor "onDidChangeCursorPosition" on-change-cursor-position)
-
+    ;; listen to the buffer and editor change events
+    (if (:use-smart-mode? config)
+      (do (ocall js-buffer "onDidChangeText" on-did-change-text)
+          (ocall js-editor "onDidChangeCursorPosition" on-change-cursor-position))
+      (ocall js-editor "onDidChangeSelectionRange" debounced-apply-parinfer))
 
     ;; add the destroy event
     (ocall js-editor "onDidDestroy" goodbye-editor)
@@ -579,7 +572,7 @@
         (swap! *editor-states assoc editor-id :paren-mode)
         (swap! *editor-states assoc editor-id :indent-mode))
       ;; run parinfer in their new mode
-      (debounced-apply-parinfer))))
+      (on-change-cursor-position nil))))
 
 
 ;;------------------------------------------------------------------------------
