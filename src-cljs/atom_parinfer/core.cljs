@@ -29,7 +29,8 @@
 
 (def default-config
   {:preview-cursor-scope? false
-   :show-open-file-dialog? true})
+   :show-open-file-dialog? true
+   :use-smart-mode? true})
 
 
 (def config-file (str (ocall fs "getHomeDirectory") "/.atom-parinfer-config.json"))
@@ -322,7 +323,23 @@
           (recur (inc idx)))))))
 
 
-(defn- apply-parinfer2 [js-editor mode]
+(defn- atom-changes->parinfer-changes [js-atom-changes start-row]
+  (if (and (object? js-atom-changes)
+           (array? (oget js-atom-changes "?changes")))
+    (ocall (oget js-atom-changes "changes") "map"
+      (fn [ch]
+        (js-obj
+          "oldText" (oget ch "oldText")
+          "newText" (oget ch "newText")
+          "lineNo" (- (oget ch "oldRange.start.row") start-row)
+          "x" (oget ch "oldRange.start.column"))))
+    nil))
+
+
+(def previous-cursor (atom nil))
+
+
+(defn- apply-parinfer2 [js-editor mode js-atom-changes]
   (let [current-txt (ocall js-editor "getText")
         lines (util/split-lines current-txt)
         ;; add a newline at the end of the file if there is not one
@@ -336,17 +353,37 @@
         single-cursor? (not (or selection? multiple-cursors?))
         start-row (find-start-row lines (oget cursor "row"))
         end-row (find-end-row lines (oget cursor "row"))
-        js-opts (js-obj "cursorLine" (- (oget cursor "row") start-row)
-                        "cursorX" (oget cursor "column")
-                        "previewCursorScope" (true? (:preview-cursor-scope? config)))
+
+        cursor-line (- (oget cursor "row") start-row)
+        cursor-x (oget cursor "column")
+
+        previous-cursor? (map? @previous-cursor)
+
+        js-opts (js-obj "cursorLine" cursor-line
+                        "cursorX" cursor-x
+
+                        "prevCursorLine" (if previous-cursor? (:cursor-line @previous-cursor))
+                        "prevCursorX" (if previous-cursor? (:cursor-x @previous-cursor))
+
+                        ;; "selectionStartLine" 0
+                        "changes" (atom-changes->parinfer-changes js-atom-changes start-row)
+
+                        "forceBalance" true
+                        "partialResult" false)
+
+        ;; TODO: we need to clear the previous-cursor atom when changing parent expressions
+        _ (reset! previous-cursor {:cursor-line cursor-line
+                                   :cursor-x cursor-x})
+
         lines-to-infer (subvec lines start-row end-row)
         text-to-infer (str (str/join "\n" lines-to-infer) "\n")
         js-result (if (= mode :paren-mode)
                     (ocall parinfer "parenMode" text-to-infer js-opts)
-                    (ocall parinfer "indentMode" text-to-infer js-opts))
+                    (ocall parinfer "smartMode" text-to-infer js-opts))
         new-cursor (js-obj "column" (oget js-result "cursorX")
                            "row" (oget cursor "row"))
         parinfer-success? (true? (oget js-result "success"))
+        ;; parinfer-success? false
         inferred-text (if parinfer-success? (oget js-result "text") false)]
 
     ;; update the text buffer
@@ -370,14 +407,14 @@
       (clear-status-bar-warning!))))
 
 
-(defn- apply-parinfer! [_cursor-change-info]
+(defn- apply-parinfer! [js-changes]
   (let [js-editor (ocall js/atom "workspace.getActiveTextEditor")]
     (when (and js-editor
-               (oget js-editor "id")
-               (not (is-autocomplete-showing?)))
+               (oget js-editor "id"))
+               ; (not (is-autocomplete-showing?)))
       (condp = (get @*editor-states (oget js-editor "id"))
-        :indent-mode (apply-parinfer2 js-editor :indent-mode)
-        :paren-mode  (apply-parinfer2 js-editor :paren-mode)
+        :indent-mode (apply-parinfer2 js-editor :indent-mode js-changes)
+        :paren-mode  (apply-parinfer2 js-editor :paren-mode nil)
         nil))))
 
 
@@ -419,17 +456,48 @@
        "Press Ctrl + ( to switch to Indent Mode once the file is balanced."))
 
 
+
+
+
+
+
+
+(def js-timeout nil)
+
+
+(defn- on-did-change-text [js-txt-changes]
+  (js/clearTimeout js-timeout)
+  (set! js-timeout (js/setTimeout (fn [] (apply-parinfer! js-txt-changes)) 5)))
+
+
+(defn- on-change-cursor-position [_js-cursor-changes]
+  (js/clearTimeout js-timeout)
+  (set! js-timeout (js/setTimeout (fn [] (apply-parinfer! nil)) 5)))
+
+
+
+
+
+
+
+
 (defn- hello-editor
   "Runs when an editor is opened."
   [js-editor]
   (let [editor-id (oget js-editor "id")
         init-parinfer? (file-has-watched-extension? (ocall js-editor "getPath"))
-        current-file (ocall js-editor "getTitle")]
+        current-file (ocall js-editor "getTitle")
+        js-buffer (ocall js-editor "getBuffer")]
     ;; add this editor state to our atom
     (swap! *editor-states assoc editor-id :disabled)
 
     ;; listen to editor change events
-    (ocall js-editor "onDidChangeSelectionRange" debounced-apply-parinfer)
+    ;; (ocall js-editor "onDidChangeSelectionRange" debounced-apply-parinfer)
+
+
+    (ocall js-buffer "onDidChangeText" on-did-change-text)
+    (ocall js-editor "onDidChangeCursorPosition" on-change-cursor-position)
+
 
     ;; add the destroy event
     (ocall js-editor "onDidDestroy" goodbye-editor)
@@ -555,3 +623,4 @@
 
 ;; noop - needed for :nodejs CLJS build
 (set! *main-cli-fn* util/always-nil)
+

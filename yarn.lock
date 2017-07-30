@@ -19,9 +19,9 @@ mkdirp@~0.3.5:
   version "0.3.5"
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-0.3.5.tgz#de3e5f8961c88c787ee1368df849ac4413eca8d7"
 
-parinfer@3.1.1:
-  version "3.1.1"
-  resolved "https://registry.yarnpkg.com/parinfer/-/parinfer-3.1.1.tgz#434f3a0e47888bf036aa4a5c6c896f502a4423f0"
+parinfer@3.9.0:
+  version "3.9.0"
+  resolved "https://registry.yarnpkg.com/parinfer/-/parinfer-3.9.0.tgz#22f7d1d1fbcac347d46f3864181f546e103b8830"
 
 rimraf@~2.2.2:
   version "2.2.8"
