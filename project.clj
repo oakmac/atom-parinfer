@@ -9,7 +9,7 @@
     [[org.clojure/clojure "1.8.0"]
      [clojure-future-spec "1.9.0-alpha16-1"]
      [org.clojure/clojurescript "1.9.562"]
-     [binaryage/oops "0.5.4"]]
+     [binaryage/oops "0.5.5"]]
 
   :plugins [[lein-cljsbuild "1.1.6"]]
 
