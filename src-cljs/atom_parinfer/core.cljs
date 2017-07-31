@@ -420,6 +420,12 @@
 (defn- apply-parinfer! [js-changes]
   (let [js-editor (ocall js/atom "workspace.getActiveTextEditor")
 
+        ;; When smart-mode is false, this function is debounced from
+        ;; onDidChangeSelectionRange which we will just identify by a non-nil
+        ;; `.selection` property.
+        selection-debounce? (and js-changes
+                                 (not (nil? (oget js-changes "selection"))))
+
         ;; js-changes is null when the cursor caused this event
         cursor-change? (nil? js-changes)
 
@@ -429,7 +435,9 @@
         empty-change? (and (not cursor-change?)
                            (nil? (first (oget js-changes "?changes"))))
 
-        should-apply? (or cursor-change? (not empty-change?))]
+        should-apply? (or selection-debounce?
+                          cursor-change?
+                          (not empty-change?))]
 
     (when (and js-editor
                (oget js-editor "id")
