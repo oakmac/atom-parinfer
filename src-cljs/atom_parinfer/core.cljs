@@ -341,6 +341,7 @@
 
 
 (def previous-cursor (atom nil))
+(def monitor-cursor? (atom true))
 
 
 (defn- apply-parinfer2 [js-editor mode js-atom-changes]
@@ -396,6 +397,7 @@
     ;; update the text buffer
     (when (and (string? inferred-text)
                (not= inferred-text text-to-infer))
+      (reset! monitor-cursor? false)
       (ocall js-editor "setTextInBufferRange" (array (array start-row 0) (array end-row 0))
                                               inferred-text
                                               (js-obj "undo" "skip"))
@@ -405,7 +407,8 @@
         (ocall js-editor "setCursorBufferPosition" new-cursor)
         ;; else just re-apply the selection (or multiple cusors) we had before
         ;; the update and ignore the cursor result from Parinfer
-        (ocall js-editor "setSelectedBufferRanges" js-selections)))
+        (ocall js-editor "setSelectedBufferRanges" js-selections))
+      (js/setTimeout #(reset! monitor-cursor? true) 0))
 
     ;; update the status bar
     (if (and (= mode :paren-mode)
@@ -415,10 +418,22 @@
 
 
 (defn- apply-parinfer! [js-changes]
-  (let [js-editor (ocall js/atom "workspace.getActiveTextEditor")]
+  (let [js-editor (ocall js/atom "workspace.getActiveTextEditor")
+
+        ;; js-changes is null when the cursor caused this event
+        cursor-change? (nil? js-changes)
+
+        ;; When we apply parinfer, it kicks off a secondary change, but the
+        ;; change is empty for some reason.  We don't want to process a secondary
+        ;; change, and we don't want to process an empty change anyway.
+        empty-change? (and (not cursor-change?)
+                           (nil? (first (oget js-changes "?changes"))))
+
+        should-apply? (or cursor-change? (not empty-change?))]
+
     (when (and js-editor
-               (oget js-editor "id"))
-               ; (not (is-autocomplete-showing?)))
+               (oget js-editor "id")
+               should-apply?)
       (condp = (get @*editor-states (oget js-editor "id"))
         :indent-mode (apply-parinfer2 js-editor :indent-mode js-changes)
         :paren-mode  (apply-parinfer2 js-editor :paren-mode nil)
@@ -468,12 +483,13 @@
 
 (defn- on-did-change-text [js-txt-changes]
   (js/clearTimeout js-change-timeout)
-  (set! js-change-timeout (js/setTimeout (fn [] (apply-parinfer! js-txt-changes)) 1)))
+  (apply-parinfer! js-txt-changes))
 
 
 (defn- on-change-cursor-position [_js-cursor-changes]
   (js/clearTimeout js-change-timeout)
-  (set! js-change-timeout (js/setTimeout (fn [] (apply-parinfer! nil)) 1)))
+  (when @monitor-cursor?
+    (set! js-change-timeout (js/setTimeout (fn [] (apply-parinfer! nil)) 0))))
 
 
 (defn- hello-editor
@@ -616,4 +632,3 @@
 
 ;; noop - needed for :nodejs CLJS build
 (set! *main-cli-fn* util/always-nil)
-
