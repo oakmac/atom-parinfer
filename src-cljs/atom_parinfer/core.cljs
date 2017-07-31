@@ -45,6 +45,13 @@
          (merge default-config))
     (catch js/Object e default-config)))
 
+;;------------------------------------------------------------------------------
+;; Editor States Atom
+;;------------------------------------------------------------------------------
+
+(def *editor-states
+  "Keep track of all the editor tabs and their Parinfer states."
+  (atom {}))
 
 ;;------------------------------------------------------------------------------
 ;; Get Editor State
@@ -56,16 +63,14 @@
 (defn- is-autocomplete-showing? []
   (if (util/qs autocomplete-el-selector) true false))
 
-
-(defn- get-active-editor-id
-  "Returns the id of the active editor.
-   False if there is none"
+(defn- get-active-editor
+  "Returns the active editor if it has an ID"
   []
-  (let [js-editor (ocall js/atom "workspace.getActiveTextEditor")]
-    (if (and js-editor (oget js-editor "id"))
-      (oget js-editor "id")
-      false)))
-
+  (when-let [js-editor (ocall js/atom "workspace.getActiveTextEditor")]
+    (when-let [id (oget js-editor "id")]
+      {:js-editor js-editor
+       :editor-id id
+       :editor-state (get @*editor-states id)})))
 
 ;;------------------------------------------------------------------------------
 ;; File Extensions Config
@@ -219,22 +224,12 @@
       (when-let [status-el (util/by-id status-el-id)]
         (oset! status-el "innerHTML" (link-text new-state))))))
 
-
-;;------------------------------------------------------------------------------
-;; Editor States Atom
-;;------------------------------------------------------------------------------
-
-(def *editor-states
-  "Keep track of all the editor tabs and their Parinfer states."
-  (atom {}))
-
-
 ;;------------------------------------------------------------------------------
 ;; Update Status Bar
 ;;------------------------------------------------------------------------------
 
 (defn- toggle-status-bar! [_atm _kwd _old-states new-states]
-  (let [editor-id (get-active-editor-id)
+  (let [{:keys [editor-id]} (get-active-editor)
         current-editor-state (get new-states editor-id)]
     (when (and editor-id current-editor-state)
       (update-status-bar! current-editor-state))))
@@ -418,34 +413,31 @@
 
 
 (defn- apply-parinfer! [js-changes]
-  (let [js-editor (ocall js/atom "workspace.getActiveTextEditor")
+  (when-let [{:keys [js-editor editor-state]} (get-active-editor)]
+    (let [;; When smart-mode is false, this function is debounced from
+          ;; onDidChangeSelectionRange which we will just identify by a non-nil
+          ;; `.selection` property.
+          selection-debounce? (and js-changes
+                                   (not (nil? (oget js-changes "selection"))))
 
-        ;; When smart-mode is false, this function is debounced from
-        ;; onDidChangeSelectionRange which we will just identify by a non-nil
-        ;; `.selection` property.
-        selection-debounce? (and js-changes
-                                 (not (nil? (oget js-changes "selection"))))
+          ;; js-changes is null when the cursor caused this event
+          cursor-change? (nil? js-changes)
 
-        ;; js-changes is null when the cursor caused this event
-        cursor-change? (nil? js-changes)
+          ;; When we apply parinfer, it kicks off a secondary change, but the
+          ;; change is empty for some reason.  We don't want to process a secondary
+          ;; change, and we don't want to process an empty change anyway.
+          empty-change? (and (not cursor-change?)
+                             (nil? (first (oget js-changes "?changes"))))
 
-        ;; When we apply parinfer, it kicks off a secondary change, but the
-        ;; change is empty for some reason.  We don't want to process a secondary
-        ;; change, and we don't want to process an empty change anyway.
-        empty-change? (and (not cursor-change?)
-                           (nil? (first (oget js-changes "?changes"))))
+          should-apply? (or selection-debounce?
+                            cursor-change?
+                            (not empty-change?))]
 
-        should-apply? (or selection-debounce?
-                          cursor-change?
-                          (not empty-change?))]
-
-    (when (and js-editor
-               (oget js-editor "id")
-               should-apply?)
-      (condp = (get @*editor-states (oget js-editor "id"))
-        :indent-mode (apply-parinfer2 js-editor :indent-mode js-changes)
-        :paren-mode  (apply-parinfer2 js-editor :paren-mode nil)
-        nil))))
+      (when should-apply?
+        (case editor-state
+          :indent-mode (apply-parinfer2 js-editor :indent-mode js-changes)
+          :paren-mode  (apply-parinfer2 js-editor :paren-mode nil)
+          nil)))))
 
 
 ;; NOTE: 20ms seems to work well for the debounce interval.
@@ -581,18 +573,14 @@
   (let [js-promise (ocall js/atom "workspace.open" file-extension-file)]
     (ocall js-promise "then" after-file-extension-tab-opened)))
 
-
 (defn- disable! []
-  (let [editor-id (get-active-editor-id)]
-    (when editor-id
-      (swap! *editor-states assoc editor-id :disabled))))
-
+  (when-let [{:keys [editor-id]} (get-active-editor)]
+    (swap! *editor-states assoc editor-id :disabled)))
 
 (defn- toggle-mode! []
-  (let [editor-id (get-active-editor-id)
-        current-state (get @*editor-states editor-id)]
-    (when current-state
-      (if (= current-state :indent-mode)
+  (let [{:keys [editor-id editor-state]} (get-active-editor)]
+    (when editor-state
+      (if (= editor-state :indent-mode)
         (swap! *editor-states assoc editor-id :paren-mode)
         (swap! *editor-states assoc editor-id :indent-mode))
       ;; run parinfer in their new mode
