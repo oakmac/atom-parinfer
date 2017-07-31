@@ -447,6 +447,13 @@
 (def debounce-interval-ms 20)
 (def debounced-apply-parinfer (gfunctions/debounce apply-parinfer! debounce-interval-ms))
 
+;;------------------------------------------------------------------------------
+;; Tab Stops
+;;------------------------------------------------------------------------------
+
+(defn on-tab [js-editor dx]
+  (js/console.log "on-tab" dx js-editor))
+
 
 ;;------------------------------------------------------------------------------
 ;; Atom Events
@@ -586,6 +593,12 @@
       ;; run parinfer in their new mode
       (on-change-cursor-position nil))))
 
+(defn- next-tab-stop! [e dx]
+  (let [tabbed? (when-let [{:keys [js-editor editor-state]} (get-active-editor)]
+                  (when (not= :disabled editor-state)
+                    (on-tab js-editor dx)))]
+    (when-not tabbed?
+      (ocall e "abortKeyBinding"))))
 
 ;;------------------------------------------------------------------------------
 ;; Package-required events
@@ -604,6 +617,9 @@
     (js-obj "parinfer:edit-file-extensions" edit-file-extensions!
             "parinfer:disable" disable!
             "parinfer:toggle-mode" toggle-mode!))
+  (ocall js/atom "commands.add" "atom-text-editor"
+    (js-obj "parinfer:next-tab-stop" #(next-tab-stop! % 1)
+            "parinfer:prev-tab-stop" #(next-tab-stop! % -1)))
 
   ;; Sometimes the editor events can all load before Atom catches up with the DOM
   ;; resulting in an initial empty status bar.

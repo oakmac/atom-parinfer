@@ -10,5 +10,10 @@
   ".platform-darwin atom-workspace": {
     "cmd-(": "parinfer:toggle-mode",
     "cmd-)": "parinfer:disable"
+  },
+
+  "atom-text-editor:not([mini])": {
+    "tab": "parinfer:next-tab-stop",
+    "shift-tab": "parinfer:prev-tab-stop"
   }
 }
