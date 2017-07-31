@@ -466,14 +466,42 @@
 (def js-change-timeout nil)
 
 
+(defn- cursor-event? [evt]
+  (= (:event-type evt) "cursor"))
+
+
+(defn- change-event? [evt]
+  (= (:event-type evt) "change"))
+
+
+(def event-queue (atom []))
+
+
+(defn- process-event-queue! []
+  (let [q @event-queue
+        q-length (count q)
+        only-cursor-changes? (every? cursor-event? q)]
+    (util/js-log "take from queue!")
+    (util/log @event-queue)
+    (reset! event-queue [])))
+
+
+(def parinfer-application-speed-ms 1000)
+(def debounced-process-queue! (gfunctions/debounce process-event-queue! parinfer-application-speed-ms))
+
+
 (defn- on-did-change-text [js-txt-changes]
-  (js/clearTimeout js-change-timeout)
-  (set! js-change-timeout (js/setTimeout (fn [] (apply-parinfer! js-txt-changes)) 1)))
+  ; (util/js-log js-txt-changes)
+  (swap! event-queue conj {:event-type "change"})
+                           ; :js-change js-txt-changes}))
+  (debounced-process-queue!))
 
 
-(defn- on-change-cursor-position [_js-cursor-changes]
-  (js/clearTimeout js-change-timeout)
-  (set! js-change-timeout (js/setTimeout (fn [] (apply-parinfer! nil)) 1)))
+(defn- on-change-cursor-position [js-cursor-changes]
+  ; (util/js-log js-cursor-changes)
+  (swap! event-queue conj {:event-type "cursor"})
+                           ; :js-cursor js-cursor-changes}))
+  (debounced-process-queue!))
 
 
 (defn- hello-editor
