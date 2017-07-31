@@ -337,6 +337,7 @@
 
 (def previous-cursor (atom nil))
 (def monitor-cursor? (atom true))
+(def previous-tabstops (atom nil))
 
 
 (defn- apply-parinfer2 [js-editor mode js-atom-changes]
@@ -357,10 +358,14 @@
         adjusted-cursor-line (- (oget cursor "row") start-row)
         cursor-x (oget cursor "column")
 
+        adjusted-selection-line (when selection?
+                                  (- (oget js-selections "0" "start" "row") start-row))
+
         js-opts (js-obj "cursorLine" adjusted-cursor-line
                         "cursorX" cursor-x
                         "prevCursorLine" (:cursor-line @previous-cursor nil)
                         "prevCursorX" (:cursor-x @previous-cursor nil)
+                        "selectionStartLine" adjusted-selection-line
 
                         ;; TODO: handle selectionStartLine
                         ;; "selectionStartLine" 0
@@ -388,6 +393,8 @@
                              "row" (+ (oget js-result "cursorLine") start-row))
                      nil)
         inferred-text (if parinfer-success? (oget js-result "text") nil)]
+
+    (reset! previous-tabstops (oget js-result "tabStops"))
 
     ;; update the text buffer
     (when (and (string? inferred-text)
@@ -452,7 +459,7 @@
 ;;------------------------------------------------------------------------------
 
 (defn on-tab [js-editor dx]
-  (js/console.log "on-tab" dx js-editor))
+  (js/console.log @previous-tabstops))
 
 
 ;;------------------------------------------------------------------------------
