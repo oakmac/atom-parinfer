@@ -496,21 +496,43 @@
       (vec xs)
       default-tab-stops)))
 
-(defn indent-selection [dx stops]
+(defn next-stop
+  [stops x dx]
+  (case dx
+    1 (first (filter #(< x %) stops))
+    -1 (last (filter #(> x %) stops))
+    nil))
+
+(defn get-line-indentation
+  [line]
+  (when-not (gstring/isEmptyOrWhitespace line)
+    (- (count line)
+       (count (gstring/trimLeft line)))))
+
+(defn change-line-indentation
+  [js-editor row delta]
+  (let [js-buffer (ocall js-editor "getBuffer")]
+    (if (pos? delta)
+      (ocall js-buffer "insert" #js[row 0] (gstring/repeat " " delta))
+      (ocall js-buffer "delete" #js[ #js[row 0] #js[row (- delta)]]))))
+
+(defn indent-selection [js-editor dx stops]
   (js/console.log "selection" (pr-str stops))
   false)
 
-(defn indent-at-cursor [dx stops]
+(defn indent-at-cursor [js-editor dx stops]
   (js/console.log "cursor" (pr-str stops))
-  false)
+  (let [cursor (ocall js-editor "getCursorBufferPosition")]
+    (change-line-indentation js-editor (oget cursor "row") (* dx 4))
+    true))
 
 (defn on-tab [js-editor dx]
   (let [js-selections (ocall js-editor "getSelectedBufferRanges")
         selection? (not (ocall (aget js-selections 0) "isEmpty"))
         stops (expand-tab-stops @previous-tabstops)]
     (if selection?
-      (indent-selection dx stops)
-      (indent-at-cursor dx stops))))
+      (indent-selection js-editor dx stops)
+      (indent-at-cursor js-editor dx stops))))
 
 ;;------------------------------------------------------------------------------
 ;; Atom Events
