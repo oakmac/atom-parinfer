@@ -463,22 +463,38 @@
    "{" 1
    "[" 1})
 
+(def default-tab-stops
+  "Default tab stops (x-locations) for fallback."
+  [0 2])
+
 (defn expand-tab-stops
-  "Expand tab stops (open-parens) to x-positions"
+  "Expand on Parinfer's tabStops (at open-parens) for our indentation style.
+  For example a single tabStop has the following information about an open-paren,
+  and we choose our desired tabStops from it.
+
+    (foo bar
+    | |  |
+    | |  ^-argX
+    | ^-insideX
+    ^-x
+  "
   [stops]
   (let [xs #js[]
         prevX #(or (last xs) -1)]
     (doseq [stop stops]
       (let [x (oget stop "x")
             argX (oget stop "argX")
-            ch (oget stop "ch")]
+            ch (oget stop "ch")
+            insideX (+ x (paren->spaces ch))]
         (when (>= (prevX) x)
           (.pop xs))
         (.push xs x)
-        (.push xs (+ x (paren->spaces ch)))
+        (.push xs insideX)
         (when argX
           (.push xs argX))))
-    (vec xs)))
+    (if (seq xs)
+      (vec xs)
+      default-tab-stops)))
 
 (defn indent-selection [dx stops]
   (js/console.log "selection" (pr-str stops))
