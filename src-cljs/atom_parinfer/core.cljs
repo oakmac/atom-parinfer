@@ -510,29 +510,46 @@
        (count (gstring/trimLeft line)))))
 
 (defn change-line-indentation
-  [js-editor row delta]
-  (let [js-buffer (ocall js-editor "getBuffer")]
-    (if (pos? delta)
-      (ocall js-buffer "insert" #js[row 0] (gstring/repeat " " delta))
-      (ocall js-buffer "delete" #js[ #js[row 0] #js[row (- delta)]]))))
+  [js-buffer row delta]
+  (if (pos? delta)
+    (ocall js-buffer "insert" (array row 0) (gstring/repeat " " delta))
+    (ocall js-buffer "delete" (array (array row 0) (array row (- delta))))))
 
 (defn indent-selection [js-editor dx stops]
   (js/console.log "selection" (pr-str stops))
   false)
 
 (defn indent-at-cursor [js-editor dx stops]
-  (js/console.log "cursor" (pr-str stops))
-  (let [cursor (ocall js-editor "getCursorBufferPosition")]
-    (change-line-indentation js-editor (oget cursor "row") (* dx 4))
-    true))
+  (let [cursor (ocall js-editor "getCursorBufferPosition")
+        row (oget cursor "row")
+        js-buffer (ocall js-editor "getBuffer")
+        line (ocall js-buffer "lineForRow" row)
+        indentX (get-line-indentation line)
+        empty-line? (nil? indentX)
+        x (if (and indentX (= dx -1)) ;; shift-tab anywhere dedents as if we are at indentation point
+            indentX
+            (oget cursor "column"))
+        use-stops? (or empty-line? (<= x indentX))
+        nextX (when use-stops?
+                (next-stop stops x dx))]
+    (when nextX
+      (when (and indentX (< x indentX))
+        (ocall js-editor "setCursorBufferPosition" (array row indentX)))
+      (change-line-indentation js-buffer row (- nextX x))
+      true)))
 
 (defn on-tab [js-editor dx]
   (let [js-selections (ocall js-editor "getSelectedBufferRanges")
         selection? (not (ocall (aget js-selections 0) "isEmpty"))
+        multiple-selections? (> (oget js-selections "length") 1)
+        cursors (ocall js-editor "getCursorBufferPositions")
+        multiple-cursors? (> (oget cursors "length") 1)
         stops (expand-tab-stops @previous-tabstops)]
     (if selection?
-      (indent-selection js-editor dx stops)
-      (indent-at-cursor js-editor dx stops))))
+      (when-not multiple-selections?
+        (indent-selection js-editor dx stops))
+      (when-not multiple-cursors?
+        (indent-at-cursor js-editor dx stops)))))
 
 ;;------------------------------------------------------------------------------
 ;; Atom Events
