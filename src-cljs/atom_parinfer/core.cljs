@@ -459,6 +459,7 @@
 ;;------------------------------------------------------------------------------
 
 (def paren->spaces
+  "We insert extra tab stops according to the type of open-paren."
   {"(" 2
    "{" 1
    "[" 1})
@@ -497,31 +498,73 @@
       default-tab-stops)))
 
 (defn next-stop
+  "Get the next tab stop starting from x, moving in the dx direction (+1/-1)
+  For example:
+
+    stops: [0 2   6 8    12]
+        x:       5
+     left:    2
+    right:        6
+  "
   [stops x dx]
-  (case dx
-    1 (first (filter #(< x %) stops))
-    -1 (last (filter #(> x %) stops))
-    nil))
+  (let [left (last (filter #(> x %) stops))
+        right (first (filter #(< x %) stops))]
+    (case dx
+      1 right
+      -1 (or left 0)
+      nil)))
 
 (defn get-line-indentation
+  "Get the indentation length of the given line. Return nil if blank."
   [line]
   (when-not (gstring/isEmptyOrWhitespace line)
     (- (count line)
        (count (gstring/trimLeft line)))))
 
-(defn change-line-indentation
+(defn indent-line
+  "Add or remove spaces from the front of the line."
   [js-buffer row delta]
   (if (pos? delta)
     (ocall js-buffer "insert" (array row 0) (gstring/repeat " " delta))
-    (ocall js-buffer "delete" (array (array row 0) (array row (- delta))))))
+    (let [range (array (array row 0) (array row (- delta)))
+          removed (ocall js-buffer "getTextInRange" range)]
+      (when (gstring/isEmptyOrWhitespace removed)
+        (ocall js-buffer "delete" range)))))
 
-(defn indent-selection [js-editor dx stops]
-  (js/console.log "selection" (pr-str stops))
-  false)
+(defn indent-lines
+  "Add or remove spaces from the front of each non-empty line.
+  Peforms change as single transaction."
+  [js-buffer rows delta]
+  (ocall js-buffer "transact"
+    (fn []
+      (doseq [row rows]
+        (when-not (ocall js-buffer "isRowBlank" row)
+          (indent-line js-buffer row delta))))))
 
-(defn indent-at-cursor [js-editor dx stops]
-  (let [cursor (ocall js-editor "getCursorBufferPosition")
-        row (oget cursor "row")
+(defn tab-at-selection
+  "Try indenting the selected lines according to structural tab stops.
+  Return true on success."
+  [js-editor selection dx stops]
+  (let [start-row (oget selection "start" "row")
+        end-col (oget selection "end" "column")
+        end-row (cond-> (oget selection "end" "row") (zero? end-col) dec)
+        rows (range start-row (inc end-row))
+        js-buffer (ocall js-editor "getBuffer")
+        indents (map #(get-line-indentation (ocall js-buffer "lineForRow" %)) rows)
+        min-indent (apply min (remove nil? indents))
+        indent-row (first (remove #(ocall js-buffer "isRowBlank" %) rows))
+        indentX (when indent-row (get-line-indentation (ocall js-buffer "lineForRow" indent-row)))
+        nextX (when indentX (next-stop stops indentX dx))
+        delta (when nextX (max (- min-indent) (- nextX indentX)))]
+    (when delta
+      (indent-lines js-buffer rows delta)
+      true)))
+
+(defn tab-at-cursor
+  "Try indenting the line at the cursor according to structural tab stops.
+  Return true on success."
+  [js-editor cursor dx stops]
+  (let [row (oget cursor "row")
         js-buffer (ocall js-editor "getBuffer")
         line (ocall js-buffer "lineForRow" row)
         indentX (get-line-indentation line)
@@ -535,21 +578,24 @@
     (when nextX
       (when (and indentX (< x indentX))
         (ocall js-editor "setCursorBufferPosition" (array row indentX)))
-      (change-line-indentation js-buffer row (- nextX x))
+      (indent-line js-buffer row (- nextX x))
       true)))
 
-(defn on-tab [js-editor dx]
-  (let [js-selections (ocall js-editor "getSelectedBufferRanges")
-        selection? (not (ocall (aget js-selections 0) "isEmpty"))
-        multiple-selections? (> (oget js-selections "length") 1)
+(defn on-tab
+  "Try indenting cursor or selection according to structural tabstops.
+  Return true on success."
+  [js-editor dx]
+  (let [selections (ocall js-editor "getSelectedBufferRanges")
+        selection? (not (ocall (aget selections 0) "isEmpty"))
+        multiple-selections? (> (oget selections "length") 1)
         cursors (ocall js-editor "getCursorBufferPositions")
         multiple-cursors? (> (oget cursors "length") 1)
         stops (expand-tab-stops @previous-tabstops)]
     (if selection?
       (when-not multiple-selections?
-        (indent-selection js-editor dx stops))
+        (tab-at-selection js-editor (first selections) dx stops))
       (when-not multiple-cursors?
-        (indent-at-cursor js-editor dx stops)))))
+        (tab-at-cursor js-editor (first cursors) dx stops)))))
 
 ;;------------------------------------------------------------------------------
 ;; Atom Events
