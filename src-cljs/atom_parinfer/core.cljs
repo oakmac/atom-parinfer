@@ -458,9 +458,43 @@
 ;; Tab Stops
 ;;------------------------------------------------------------------------------
 
-(defn on-tab [js-editor dx]
-  (js/console.log @previous-tabstops))
+(def paren->spaces
+  {"(" 2
+   "{" 1
+   "[" 1})
 
+(defn expand-tab-stops
+  "Expand tab stops (open-parens) to x-positions"
+  [stops]
+  (let [xs #js[]
+        prevX #(or (last xs) -1)]
+    (doseq [stop stops]
+      (let [x (oget stop "x")
+            argX (oget stop "argX")
+            ch (oget stop "ch")]
+        (when (>= (prevX) x)
+          (.pop xs))
+        (.push xs x)
+        (.push xs (+ x (paren->spaces ch)))
+        (when argX
+          (.push xs argX))))
+    (vec xs)))
+
+(defn indent-selection [dx stops]
+  (js/console.log "selection" (pr-str stops))
+  false)
+
+(defn indent-at-cursor [dx stops]
+  (js/console.log "cursor" (pr-str stops))
+  false)
+
+(defn on-tab [js-editor dx]
+  (let [js-selections (ocall js-editor "getSelectedBufferRanges")
+        selection? (not (ocall (aget js-selections 0) "isEmpty"))
+        stops (expand-tab-stops @previous-tabstops)]
+    (if selection?
+      (indent-selection dx stops)
+      (indent-at-cursor dx stops))))
 
 ;;------------------------------------------------------------------------------
 ;; Atom Events
