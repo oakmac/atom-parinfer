@@ -431,6 +431,8 @@
         inferred-text (if parinfer-success? (oget js-result "text") nil)]
 
     (reset! previous-tabstops (oget js-result "tabStops"))
+
+    ;; update error markers
     (clear-previous-error-markers js-editor start-row end-row (oget js-result "error"))
     (when js-error
       (add-error-marker js-editor start-row js-error)
@@ -454,8 +456,7 @@
       (js/setTimeout #(reset! monitor-cursor? true) 0))
 
     ;; update the status bar
-    (if (and (= mode :paren-mode)
-             (not parinfer-success?))
+    (if (not parinfer-success?)
       (set-status-bar-warning!)
       (clear-status-bar-warning!))))
 
