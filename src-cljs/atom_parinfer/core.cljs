@@ -273,6 +273,41 @@
 
 (add-watch *editor-states :toggle-status-classes toggle-status-classes!)
 
+;;------------------------------------------------------------------------------
+;; Error Markers
+;;------------------------------------------------------------------------------
+
+(def error-marker-class "parinfer-error-marker")
+
+(defn add-error-marker
+  [js-editor start-row js-error]
+  (let [row (+ (oget js-error "lineNo") start-row)
+        col (oget js-error "x")
+        marker (ocall js-editor "markBufferRange"
+                 (array (array row col)
+                        (array row (inc col)))
+                 (js-obj "invalidate" "never"))
+        decorator (ocall js-editor "decorateMarker" marker
+                    (js-obj "type" "highlight"
+                            "class" error-marker-class))]
+    (js/console.log "position" row col)
+    (js/console.log "marker" marker)
+    (js/console.log "decorator" decorator)))
+
+
+(defn get-previous-error-markers
+  [js-editor start-row end-row]
+  (let [markers (ocall js-editor "findMarkers")]
+                  ; (js-obj "startBufferRow" start-row
+                  ;         "endBufferRow" end-row))]
+    (js/console.log "markers" markers)
+    markers))
+
+(defn clear-previous-error-markers
+  [js-editor start-row end-row js-error]
+  (doseq [marker (get-previous-error-markers js-editor start-row end-row)]
+    ; (ocall marker "destroy"))
+    nil))
 
 ;;------------------------------------------------------------------------------
 ;; Apply Parinfer
@@ -387,6 +422,7 @@
                       (ocall parinfer "smartMode" text-to-infer js-opts)
                       (ocall parinfer "indentMode" text-to-infer js-opts)))
         parinfer-success? (true? (oget js-result "success"))
+        js-error (oget js-result "error")
         ;; TODO: save tabStops here
         new-cursor (if parinfer-success?
                      (js-obj "column" (oget js-result "cursorX")
@@ -395,6 +431,7 @@
         inferred-text (if parinfer-success? (oget js-result "text") nil)]
 
     (reset! previous-tabstops (oget js-result "tabStops"))
+    (clear-previous-error-markers js-editor start-row end-row (oget js-result "error"))
 
     ;; update the text buffer
     (when (and (string? inferred-text)
@@ -403,6 +440,9 @@
       (ocall js-editor "setTextInBufferRange" (array (array start-row 0) (array end-row 0))
                                               inferred-text
                                               (js-obj "undo" "skip"))
+
+      (when js-error
+        (add-error-marker js-editor start-row js-error))
 
       (if (and single-cursor? new-cursor)
         ;; update the cursor position with the new cursor from Parinfer
