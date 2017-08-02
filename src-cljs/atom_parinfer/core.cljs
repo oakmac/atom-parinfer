@@ -298,14 +298,15 @@
   (let [marker-row (oget (ocall marker "getBufferRange") "start" "row")]
     (<= start-row marker-row end-row)))
 
-(defn get-previous-error-markers
+(defn get-error-markers
   [js-editor start-row end-row]
-  (filter #(marker-inside? % start-row end-row)
-    (ocall js-editor "findMarkers")))
+  (->> (ocall js-editor "findMarkers")
+       (filter #(@error-marker-ids (oget % "id")))
+       (filter #(marker-inside? % start-row end-row))))
 
-(defn clear-previous-error-markers
+(defn clear-error-markers
   [js-editor start-row end-row js-error]
-  (doseq [marker (get-previous-error-markers js-editor start-row end-row)]
+  (doseq [marker (get-error-markers js-editor start-row end-row)]
     (swap! error-marker-ids disj (oget marker "id"))
     (ocall marker "destroy")))
 
@@ -433,7 +434,7 @@
     (reset! previous-tabstops (oget js-result "tabStops"))
 
     ;; update error markers
-    (clear-previous-error-markers js-editor start-row end-row (oget js-result "error"))
+    (clear-error-markers js-editor start-row end-row (oget js-result "error"))
     (when js-error
       (add-error-marker js-editor start-row js-error)
       (when-let [extra (oget js-error "extra")]
