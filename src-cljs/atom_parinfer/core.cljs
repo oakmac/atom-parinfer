@@ -337,6 +337,7 @@
 
 (def previous-cursor (atom nil))
 (def monitor-cursor? (atom true))
+(def previous-tabstops (atom nil))
 
 
 (defn- apply-parinfer2 [js-editor mode js-atom-changes]
@@ -357,10 +358,14 @@
         adjusted-cursor-line (- (oget cursor "row") start-row)
         cursor-x (oget cursor "column")
 
+        adjusted-selection-line (when selection?
+                                  (- (oget js-selections "0" "start" "row") start-row))
+
         js-opts (js-obj "cursorLine" adjusted-cursor-line
                         "cursorX" cursor-x
                         "prevCursorLine" (:cursor-line @previous-cursor nil)
                         "prevCursorX" (:cursor-x @previous-cursor nil)
+                        "selectionStartLine" adjusted-selection-line
 
                         ;; TODO: handle selectionStartLine
                         ;; "selectionStartLine" 0
@@ -388,6 +393,8 @@
                              "row" (+ (oget js-result "cursorLine") start-row))
                      nil)
         inferred-text (if parinfer-success? (oget js-result "text") nil)]
+
+    (reset! previous-tabstops (oget js-result "tabStops"))
 
     ;; update the text buffer
     (when (and (string? inferred-text)
@@ -447,6 +454,148 @@
 (def debounce-interval-ms 20)
 (def debounced-apply-parinfer (gfunctions/debounce apply-parinfer! debounce-interval-ms))
 
+;;------------------------------------------------------------------------------
+;; Tab Stops
+;;------------------------------------------------------------------------------
+
+(def paren->spaces
+  "We insert extra tab stops according to the type of open-paren."
+  {"(" 2
+   "{" 1
+   "[" 1})
+
+(def default-tab-stops
+  "Default tab stops (x-locations) for fallback."
+  [0 2])
+
+(defn expand-tab-stops
+  "Expand on Parinfer's tabStops (at open-parens) for our indentation style.
+  For example a single tabStop has the following information about an open-paren,
+  and we choose our desired tabStops from it.
+
+    (foo bar
+    | |  |
+    | |  ^-argX
+    | ^-insideX
+    ^-x
+  "
+  [stops]
+  (let [xs #js[]
+        prevX #(or (last xs) -1)]
+    (doseq [stop stops]
+      (let [x (oget stop "x")
+            argX (oget stop "argX")
+            ch (oget stop "ch")
+            insideX (+ x (paren->spaces ch))]
+        (when (>= (prevX) x)
+          (.pop xs))
+        (.push xs x)
+        (.push xs insideX)
+        (when argX
+          (.push xs argX))))
+    (if (seq xs)
+      (vec xs)
+      default-tab-stops)))
+
+(defn next-stop
+  "Get the next tab stop starting from x, moving in the dx direction (+1/-1)
+  For example:
+
+    stops: [0 2   6 8    12]
+        x:       5
+     left:    2
+    right:        6
+  "
+  [stops x dx]
+  (let [left (last (filter #(> x %) stops))
+        right (first (filter #(< x %) stops))]
+    (case dx
+      1 right
+      -1 (or left 0)
+      nil)))
+
+(defn get-line-indentation
+  "Get the indentation length of the given line. Return nil if blank."
+  [line]
+  (when-not (gstring/isEmptyOrWhitespace line)
+    (- (count line)
+       (count (gstring/trimLeft line)))))
+
+(defn indent-line
+  "Add or remove spaces from the front of the line."
+  [js-buffer row delta]
+  (if (pos? delta)
+    (ocall js-buffer "insert" (array row 0) (gstring/repeat " " delta))
+    (let [range (array (array row 0) (array row (- delta)))
+          removed (ocall js-buffer "getTextInRange" range)]
+      (when (gstring/isEmptyOrWhitespace removed)
+        (ocall js-buffer "delete" range)))))
+
+(defn indent-lines
+  "Add or remove spaces from the front of each non-empty line.
+  Peforms change as single transaction."
+  [js-buffer rows delta]
+  (ocall js-buffer "transact"
+    (fn []
+      (doseq [row rows]
+        (when-not (ocall js-buffer "isRowBlank" row)
+          (indent-line js-buffer row delta))))))
+
+(defn tab-at-selection
+  "Try indenting the selected lines according to structural tab stops.
+  Return true on success."
+  [js-editor selection dx stops]
+  (let [start-row (oget selection "start" "row")
+        end-col (oget selection "end" "column")
+        end-row (cond-> (oget selection "end" "row") (zero? end-col) dec)
+        rows (range start-row (inc end-row))
+        js-buffer (ocall js-editor "getBuffer")
+        indents (map #(get-line-indentation (ocall js-buffer "lineForRow" %)) rows)
+        min-indent (apply min (remove nil? indents))
+        indent-row (first (remove #(ocall js-buffer "isRowBlank" %) rows))
+        indentX (when indent-row (get-line-indentation (ocall js-buffer "lineForRow" indent-row)))
+        nextX (when indentX (next-stop stops indentX dx))
+        delta (when nextX (max (- min-indent) (- nextX indentX)))]
+    (when delta
+      (indent-lines js-buffer rows delta)
+      true)))
+
+(defn tab-at-cursor
+  "Try indenting the line at the cursor according to structural tab stops.
+  Return true on success."
+  [js-editor cursor dx stops]
+  (let [row (oget cursor "row")
+        js-buffer (ocall js-editor "getBuffer")
+        line (ocall js-buffer "lineForRow" row)
+        indentX (get-line-indentation line)
+        empty-line? (nil? indentX)
+        x (if (and indentX (= dx -1)) ;; shift-tab anywhere dedents as if we are at indentation point
+            indentX
+            (oget cursor "column"))
+        use-stops? (or empty-line? (<= x indentX))
+        nextX (when use-stops?
+                (next-stop stops x dx))]
+    (when nextX
+      (when (and indentX (< x indentX))
+        (ocall js-editor "setCursorBufferPosition" (array row indentX)))
+      (indent-line js-buffer row (- nextX x))
+      true)))
+
+(defn on-tab
+  "Try indenting cursor or selection according to structural tabstops.
+  Return true on success."
+  [js-editor dx]
+  (let [selections (ocall js-editor "getSelectedBufferRanges")
+        selection? (not (ocall (aget selections 0) "isEmpty"))
+        multiple-selections? (> (oget selections "length") 1)
+        cursors (ocall js-editor "getCursorBufferPositions")
+        multiple-cursors? (> (oget cursors "length") 1)
+        stops (expand-tab-stops @previous-tabstops)]
+    (if selection?
+      (when-not multiple-selections?
+        (tab-at-selection js-editor (first selections) dx stops))
+      (when-not multiple-cursors?
+        (tab-at-cursor js-editor (first cursors) dx stops)))))
 
 ;;------------------------------------------------------------------------------
 ;; Atom Events
@@ -586,6 +735,12 @@
       ;; run parinfer in their new mode
       (on-change-cursor-position nil))))
 
+(defn- next-tab-stop! [e dx]
+  (let [tabbed? (when-let [{:keys [js-editor editor-state]} (get-active-editor)]
+                  (when (not= :disabled editor-state)
+                    (on-tab js-editor dx)))]
+    (when-not tabbed?
+      (ocall e "abortKeyBinding"))))
 
 ;;------------------------------------------------------------------------------
 ;; Package-required events
@@ -604,6 +759,9 @@
     (js-obj "parinfer:edit-file-extensions" edit-file-extensions!
             "parinfer:disable" disable!
             "parinfer:toggle-mode" toggle-mode!))
+  (ocall js/atom "commands.add" "atom-text-editor"
+    (js-obj "parinfer:next-tab-stop" #(next-tab-stop! % 1)
+            "parinfer:prev-tab-stop" #(next-tab-stop! % -1)))
 
   ;; Sometimes the editor events can all load before Atom catches up with the DOM
   ;; resulting in an initial empty status bar.
