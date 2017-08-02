@@ -278,36 +278,36 @@
 ;;------------------------------------------------------------------------------
 
 (def error-marker-class "parinfer-error-marker")
+(def error-marker-ids (atom #{}))
 
 (defn add-error-marker
   [js-editor start-row js-error]
   (let [row (+ (oget js-error "lineNo") start-row)
         col (oget js-error "x")
-        marker (ocall js-editor "markBufferRange"
-                 (array (array row col)
-                        (array row (inc col)))
+        range (array (array row col)
+                     (array row (inc col)))
+        marker (ocall js-editor "markBufferRange" range
                  (js-obj "invalidate" "never"))
         decorator (ocall js-editor "decorateMarker" marker
                     (js-obj "type" "highlight"
                             "class" error-marker-class))]
-    (js/console.log "position" row col)
-    (js/console.log "marker" marker)
-    (js/console.log "decorator" decorator)))
+    (swap! error-marker-ids conj (oget marker "id"))))
 
+(defn marker-inside?
+  [marker start-row end-row]
+  (let [marker-row (oget (ocall marker "getBufferRange") "start" "row")]
+    (<= start-row marker-row end-row)))
 
 (defn get-previous-error-markers
   [js-editor start-row end-row]
-  (let [markers (ocall js-editor "findMarkers")]
-                  ; (js-obj "startBufferRow" start-row
-                  ;         "endBufferRow" end-row))]
-    (js/console.log "markers" markers)
-    markers))
+  (filter #(marker-inside? % start-row end-row)
+    (ocall js-editor "findMarkers")))
 
 (defn clear-previous-error-markers
   [js-editor start-row end-row js-error]
   (doseq [marker (get-previous-error-markers js-editor start-row end-row)]
-    ; (ocall marker "destroy"))
-    nil))
+    (swap! error-marker-ids disj (oget marker "id"))
+    (ocall marker "destroy")))
 
 ;;------------------------------------------------------------------------------
 ;; Apply Parinfer
@@ -432,6 +432,10 @@
 
     (reset! previous-tabstops (oget js-result "tabStops"))
     (clear-previous-error-markers js-editor start-row end-row (oget js-result "error"))
+    (when js-error
+      (add-error-marker js-editor start-row js-error)
+      (when-let [extra (oget js-error "extra")]
+        (add-error-marker js-editor start-row extra)))
 
     ;; update the text buffer
     (when (and (string? inferred-text)
@@ -440,9 +444,6 @@
       (ocall js-editor "setTextInBufferRange" (array (array start-row 0) (array end-row 0))
                                               inferred-text
                                               (js-obj "undo" "skip"))
-
-      (when js-error
-        (add-error-marker js-editor start-row js-error))
 
       (if (and single-cursor? new-cursor)
         ;; update the cursor position with the new cursor from Parinfer
