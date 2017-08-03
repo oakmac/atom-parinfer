@@ -3,6 +3,7 @@
     [atom-parinfer.util :as util]
     [clojure.string :as str]
     [clojure.walk :as walk]
+    [clojure.set :as set]
     [goog.array :as garray]
     [goog.functions :as gfunctions]
     [goog.string :as gstring]
@@ -306,9 +307,10 @@
 
 (defn clear-error-markers
   [js-editor start-row end-row js-error]
-  (doseq [marker (get-error-markers js-editor start-row end-row)]
-    (swap! error-marker-ids disj (oget marker "id"))
-    (ocall marker "destroy")))
+  (let [markers (get-error-markers js-editor start-row end-row)
+        ids (set (map #(oget % "id") markers))]
+    (run! #(ocall % "destroy") markers)
+    (swap! error-marker-ids set/difference ids)))
 
 ;;------------------------------------------------------------------------------
 ;; Apply Parinfer
