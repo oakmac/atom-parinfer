@@ -278,7 +278,7 @@
 ;; Error Markers
 ;;------------------------------------------------------------------------------
 
-(def error-marker-class "parinfer-error-marker")
+(def error-marker-class "parinfer-error-marker-778ea")
 (def error-marker-ids (atom #{}))
 
 (defn add-error-marker
