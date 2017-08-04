@@ -3,6 +3,7 @@
     [atom-parinfer.util :as util]
     [clojure.string :as str]
     [clojure.walk :as walk]
+    [clojure.set :as set]
     [goog.array :as garray]
     [goog.functions :as gfunctions]
     [goog.string :as gstring]
@@ -273,6 +274,43 @@
 
 (add-watch *editor-states :toggle-status-classes toggle-status-classes!)
 
+;;------------------------------------------------------------------------------
+;; Error Markers
+;;------------------------------------------------------------------------------
+
+(def error-marker-class "parinfer-error-marker-778ea")
+(def error-marker-ids (atom #{}))
+
+(defn add-error-marker
+  [js-editor start-row js-error]
+  (let [row (+ (oget js-error "lineNo") start-row)
+        col (oget js-error "x")
+        range (array (array row col)
+                     (array row (inc col)))
+        marker (ocall js-editor "markBufferRange" range
+                 (js-obj "invalidate" "never"))
+        decorator (ocall js-editor "decorateMarker" marker
+                    (js-obj "type" "highlight"
+                            "class" error-marker-class))]
+    (swap! error-marker-ids conj (oget marker "id"))))
+
+(defn marker-inside?
+  [marker start-row end-row]
+  (let [marker-row (oget (ocall marker "getBufferRange") "start" "row")]
+    (<= start-row marker-row end-row)))
+
+(defn get-error-markers
+  [js-editor start-row end-row]
+  (->> (ocall js-editor "findMarkers")
+       (filter #(@error-marker-ids (oget % "id")))
+       (filter #(marker-inside? % start-row end-row))))
+
+(defn clear-error-markers
+  [js-editor start-row end-row js-error]
+  (let [markers (get-error-markers js-editor start-row end-row)
+        ids (set (map #(oget % "id") markers))]
+    (run! #(ocall % "destroy") markers)
+    (swap! error-marker-ids set/difference ids)))
 
 ;;------------------------------------------------------------------------------
 ;; Apply Parinfer
@@ -387,6 +425,7 @@
                       (ocall parinfer "smartMode" text-to-infer js-opts)
                       (ocall parinfer "indentMode" text-to-infer js-opts)))
         parinfer-success? (true? (oget js-result "success"))
+        js-error (oget js-result "error")
         ;; TODO: save tabStops here
         new-cursor (if parinfer-success?
                      (js-obj "column" (oget js-result "cursorX")
@@ -395,6 +434,13 @@
         inferred-text (if parinfer-success? (oget js-result "text") nil)]
 
     (reset! previous-tabstops (oget js-result "tabStops"))
+
+    ;; update error markers
+    (clear-error-markers js-editor start-row end-row (oget js-result "error"))
+    (when js-error
+      (add-error-marker js-editor start-row js-error)
+      (when-let [extra (oget js-error "extra")]
+        (add-error-marker js-editor start-row extra)))
 
     ;; update the text buffer
     (when (and (string? inferred-text)
@@ -413,8 +459,7 @@
       (js/setTimeout #(reset! monitor-cursor? true) 0))
 
     ;; update the status bar
-    (if (and (= mode :paren-mode)
-             (not parinfer-success?))
+    (if (not parinfer-success?)
       (set-status-bar-warning!)
       (clear-status-bar-warning!))))
 
