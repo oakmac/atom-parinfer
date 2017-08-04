@@ -23,28 +23,120 @@
 
 (def version (oget package "version"))
 
-
 ;;------------------------------------------------------------------------------
-;; Load Config (optional)
+;; Config
 ;;------------------------------------------------------------------------------
 
-(def default-config
-  {:force-balance? true
-   :show-open-file-dialog? true
-   :use-smart-mode? false})
+(def default-file-extensions
+  [".clj"  ;; Clojure
+   ".cljs" ;; ClojureScript
+   ".cljc" ;; Clojure + ClojureScript
+   ".edn"  ;; Extensible Data Notation
+   ".boot" ;; Boot build script (Clojure build framework)
+   ".lfe"  ;; Lisp Flavored Erlang
+   ".rkt"  ;; Racket
+   ".scm"  ;; Scheme
+   ".lisp" ;; Lisp
+   ".lsp"  ;; Lisp
+   ".cl"   ;; Common Lisp
+   ".el"]) ;; Emacs Lisp
 
 
-(def config-file (str (ocall fs "getHomeDirectory") "/.atom-parinfer-config.json"))
+
+(def config-schema
+  {:use-smart-mode?
+   {:order 1
+    :title "**Smart Mode (BETA)**:<br/>Replace Indent Mode with Smart Mode (various improvements to preserve structure while typing)"
+    :type "boolean"
+    :default false}
+
+   :force-balance?
+   {:order 2
+    :title "**Force Balance**:<br/>Remove any unmatched close-parens to maintain balance."
+    :type "boolean"
+    :default true}
+
+   :show-open-file-dialog?
+   {:order 3
+    :title "Show a dialog when opening a file with unbalanced parentheses or poor indentation."
+    :type "boolean"
+    :default true}
+
+   :file-extensions
+   {:order 4
+    :title "Auto-enable Parinfer for these file extensions."
+    :default default-file-extensions
+    :type "array"
+    :items {:type "string"}}})
+
+
+(defn config-key
+  "Config keys must be namespaced."
+  [k]
+  (str "Parinfer." (name k)))
 
 
 (def config
+  "The user's current choices for each config."
+  (atom {}))
+
+
+(defn observe-config!
+  "Initialize config values and keep up with changes made from the UI."
+  []
+  (doseq [k (keys config-schema)]
+    (ocall (oget js/atom "config") "observe" (config-key k)
+      #(swap! config assoc k %))))
+
+
+(defn- file-has-watched-extension?
+  "Does this filename end with an extension that we are watching?"
+  [filename]
+  (and (string? filename)
+       (some #(gstring/endsWith filename %) (:file-extensions @config))))
+
+;;------------------------------------------------------------------------------
+;; Old Config
+;;------------------------------------------------------------------------------
+
+(def old-config-file (str (ocall fs "getHomeDirectory") "/.atom-parinfer-config.json"))
+(def old-file-extension-file (str (ocall fs "getHomeDirectory") "/.parinfer-file-extensions.txt"))
+
+(defn- read-old-config []
   (try
-    (->> (ocall fs "readFileSync" config-file)
+    (->> (ocall fs "readFileSync" old-config-file "utf8")
          js/JSON.parse
          js->clj
-         walk/keywordize-keys
-         (merge default-config))
-    (catch js/Object e default-config)))
+         walk/keywordize-keys)
+    (catch js/Object e nil)))
+
+(defn- read-old-file-extensions []
+  (try
+    (let [txt (ocall fs "readFileSync" old-file-extension-file "utf8")
+          lines (util/split-lines txt)]
+      (reduce
+        (fn [v line]
+          (let [trimmed-line (str/trim line)]
+            (cond
+              (str/blank? trimmed-line) v             ;; skip empty lines
+              (gstring/startsWith trimmed-line "#") v ;; skip comments
+              :else (conj v trimmed-line))))          ;; else add it
+        []
+        lines))
+    (catch js/Object e nil)))
+
+(defn- handle-old-config-files!
+  "Get data from old config files if still present, then delete them."
+  []
+  (doseq [[k v] (read-old-config)]
+    (when (config-schema k)
+      (ocall (oget js/atom "config") "set" (config-key k) v)))
+
+  (when-let [old-file-extensions (clj->js (read-old-file-extensions))]
+    (ocall (oget js/atom "config") "set" (config-key :file-extensions) old-file-extensions))
+
+  (ocall fs "removeSync" old-config-file)
+  (ocall fs "removeSync" old-file-extension-file))
 
 ;;------------------------------------------------------------------------------
 ;; Editor States Atom
@@ -72,95 +164,6 @@
       {:js-editor js-editor
        :editor-id id
        :editor-state (get @*editor-states id)})))
-
-;;------------------------------------------------------------------------------
-;; File Extensions Config
-;;------------------------------------------------------------------------------
-
-(def file-extension-file (str (ocall fs "getHomeDirectory") "/.parinfer-file-extensions.txt"))
-(def utf8 "utf8")
-
-
-(def default-file-extensions
-  #{".clj"  ;; Clojure
-    ".cljs" ;; ClojureScript
-    ".cljc" ;; Clojure + ClojureScript
-    ".edn"  ;; Extensible Data Notation
-    ".boot" ;; Boot build script (Clojure build framework)
-    ".lfe"  ;; Lisp Flavored Erlang
-    ".rkt"  ;; Racket
-    ".scm"  ;; Scheme
-    ".lisp" ;; Lisp
-    ".lsp"  ;; Lisp
-    ".cl"   ;; Common Lisp
-    ".el"}) ;; Emacs Lisp
-
-
-(def default-file-extension-config
-  (str "# one file extension per line please :)\n"
-       (str/join "\n" (sort default-file-extensions))
-       "\n"))
-
-
-(def *file-extensions (atom default-file-extensions))
-
-
-(set-validator! *file-extensions set?)
-
-
-(defn- file-has-watched-extension?
-  "Does this filename end with an extension that we are watching?"
-  [filename]
-  (and (string? filename)
-       (some #(gstring/endsWith filename %) @*file-extensions)))
-
-
-(defn- comment-line? [line]
-  (gstring/startsWith line "#"))
-
-
-(defn- parse-file-extension-line [v line]
-  (let [trimmed-line (str/trim line)]
-    (cond
-      ;; skip empty lines
-      (str/blank? trimmed-line) v
-
-      ;; skip comments
-      (comment-line? trimmed-line) v
-
-      ;; else add it
-      :else (conj v trimmed-line))))
-
-
-(defn- parse-file-extension-config [txt]
-  (let [lines (util/split-lines txt)]
-    (reduce parse-file-extension-line #{} lines)))
-
-
-(defn- write-default-file-extensions-config! []
-  (ocall fs "writeFile" file-extension-file default-file-extension-config))
-
-
-;; NOTE: it is important that this file system read is done synchronously
-;; see: https://github.com/oakmac/atom-parinfer/issues/60
-(defn- load-file-extensions! []
-  (let [file-text (try (ocall fs "readFileSync" file-extension-file utf8)
-                       (catch js/Error _js-err false))]
-    (if (string? file-text)
-      ;; parse and load the file extensions
-      (reset! *file-extensions (parse-file-extension-config file-text))
-      ;; else there was an issue loading the file, create one with the default extensions
-      ;; NOTE: we do not need to set the file-extensions atom in this case
-      ;;       because it is already set to the default extensions
-      (write-default-file-extensions-config!))))
-
-
-;; reload their file extensions when the editor is saved
-(defn- after-file-extension-tab-opened [editor]
-  (ocall editor "onDidSave"
-    (fn []
-      (reset! *file-extensions (parse-file-extension-config (ocall editor "getText"))))))
-
 
 ;;------------------------------------------------------------------------------
 ;; Status Bar
@@ -208,7 +211,7 @@
 
 (defn- link-text [state]
   (case state
-    :indent-mode (if (:use-smart-mode? config)
+    :indent-mode (if (:use-smart-mode? @config)
                    "Parinfer: Smart"
                    "Parinfer: Indent")
     :paren-mode  "Parinfer: Paren"
@@ -409,7 +412,7 @@
                         ;; "selectionStartLine" 0
                         "changes" (atom-changes->parinfer-changes js-atom-changes start-row)
 
-                        "forceBalance" (:force-balance? config)
+                        "forceBalance" (:force-balance? @config)
                         "partialResult" false)
 
         ;; save this cursor information for the next iteration
@@ -421,7 +424,7 @@
         text-to-infer (str (str/join "\n" lines-to-infer) "\n")
         js-result (if (= mode :paren-mode)
                     (ocall parinfer "parenMode" text-to-infer js-opts)
-                    (if (:use-smart-mode? config)
+                    (if (:use-smart-mode? @config)
                       (ocall parinfer "smartMode" text-to-infer js-opts)
                       (ocall parinfer "indentMode" text-to-infer js-opts)))
         parinfer-success? (true? (oget js-result "success"))
@@ -697,7 +700,7 @@
     (swap! *editor-states assoc editor-id :disabled)
 
     ;; listen to the buffer and editor change events
-    (if (:use-smart-mode? config)
+    (if (:use-smart-mode? @config)
       (do (ocall js-buffer "onDidChangeText" on-did-change-text)
           (ocall js-editor "onDidChangeCursorPosition" on-change-cursor-position))
       (ocall js-editor "onDidChangeSelectionRange" debounced-apply-parinfer))
@@ -707,7 +710,7 @@
 
     ;; run Paren Mode on the file if we recognize the extension.
     (when init-parinfer?
-      (let [show-open-file-dialog? (true? (:show-open-file-dialog? config))
+      (let [show-open-file-dialog? (true? (:show-open-file-dialog? @config))
             current-text (ocall js-editor "getText")
             js-paren-mode-result (ocall parinfer "parenMode" current-text)
             paren-mode-succeeded? (true? (oget js-paren-mode-result "success"))
@@ -762,11 +765,6 @@
   (swap! *editor-states identity))
 
 
-(defn- edit-file-extensions! []
-  ;; open the file extension config file in a new tab
-  (let [js-promise (ocall js/atom "workspace.open" file-extension-file)]
-    (ocall js-promise "then" after-file-extension-tab-opened)))
-
 (defn- disable! []
   (when-let [{:keys [editor-id]} (get-active-editor)]
     (swap! *editor-states assoc editor-id :disabled)))
@@ -794,15 +792,17 @@
 (defn- activate [_state]
   (util/js-log (str "atom-parinfer v" version " activated"))
 
-  (load-file-extensions!)
+  (observe-config!)
+  (try
+    (handle-old-config-files!)
+    (catch js/Object e nil))
 
   (ocall js/atom "workspace.observeTextEditors" hello-editor)
   (ocall js/atom "workspace.onDidChangeActivePaneItem" pane-changed)
 
   ;; add package events
   (ocall js/atom "commands.add" "atom-workspace"
-    (js-obj "parinfer:edit-file-extensions" edit-file-extensions!
-            "parinfer:disable" disable!
+    (js-obj "parinfer:disable" disable!
             "parinfer:toggle-mode" toggle-mode!))
   (ocall js/atom "commands.add" "atom-text-editor"
     (js-obj "parinfer:next-tab-stop" #(next-tab-stop! % 1)
@@ -824,10 +824,11 @@
 ;;------------------------------------------------------------------------------
 
 (oset! js/module "exports"
-  (js-obj "activate" activate
-          "deactivate" util/always-nil
-          "serialize" util/always-nil))
-
+  (clj->js
+    {:activate activate
+     :deactivate util/always-nil
+     :serialize util/always-nil
+     :config config-schema}))
 
 ;; noop - needed for :nodejs CLJS build
 (set! *main-cli-fn* util/always-nil)
