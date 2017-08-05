@@ -7,10 +7,6 @@
           "label": "Parinfer",
           "submenu": [
             {
-              "label": "Edit File Extensions",
-              "command": "parinfer:edit-file-extensions"
-            },
-            {
               "label": "Toggle Mode",
               "command": "parinfer:toggle-mode"
             },
