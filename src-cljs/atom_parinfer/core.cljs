@@ -46,25 +46,32 @@
 (def config-schema
   {:use-smart-mode?
    {:order 1
-    :title "**Smart Mode (BETA)**:<br/>Replace Indent Mode with Smart Mode (various improvements to preserve structure while typing)"
+    :title "Smart Mode (Beta)"
+    :description "Replace Indent Mode with Smart Mode (various improvements to preserve structure while typing)"
     :type "boolean"
     :default false}
 
    :force-balance?
    {:order 2
-    :title "**Force Balance**:<br/>Remove any unmatched close-parens to maintain balance."
+    :title "Force Balance"
+    :description
+    (str "Code is auto-balanced in a majority of cases. But what to do when an unmatched close-paren cannot be resolved automatically?<br/>"
+         "- __ON__: Remove it to stay 100% balanced, at the cost of some unintended inline restructuring.<br/>"
+         "- __OFF__: Highlight it so you can manually correct it without losing structure.")
     :type "boolean"
     :default true}
 
    :show-open-file-dialog?
    {:order 3
-    :title "Show a dialog when opening a file with unbalanced parentheses or poor indentation."
+    :title "Warn when opening bad file"
+    :description "Show a dialog when opening a file with unbalanced parentheses or incorrect indentation."
     :type "boolean"
     :default true}
 
    :file-extensions
    {:order 4
-    :title "Auto-enable Parinfer for these file extensions."
+    :title "File Extensions"
+    :description "Auto-enable Parinfer for these file extensions."
     :default default-file-extensions
     :type "array"
     :items {:type "string"}}})
