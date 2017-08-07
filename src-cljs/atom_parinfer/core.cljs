@@ -53,7 +53,7 @@
 
    :force-balance?
    {:order 2
-    :title "Force Balance"
+    :title "Force Balance (Recommend ON)"
     :description
     (str "Code is auto-balanced in a majority of cases. But what to do when an unmatched close-paren cannot be resolved automatically?<br/>"
          "- __ON__: Remove it to stay 100% balanced, at the cost of some unintended inline restructuring.<br/>"
@@ -63,7 +63,7 @@
 
    :show-open-file-dialog?
    {:order 3
-    :title "Warn when opening bad file"
+    :title "Warn when opening bad file (Strong Recommend ON)"
     :description "Show a dialog when opening a file with unbalanced parentheses or incorrect indentation."
     :type "boolean"
     :default true}
@@ -77,7 +77,7 @@
     :items {:type "string"}}})
 
 
-(defn config-key
+(defn- config-key
   "Config keys must be namespaced."
   [k]
   (str "Parinfer." (name k)))
@@ -88,7 +88,7 @@
   (atom {}))
 
 
-(defn observe-config!
+(defn- observe-config!
   "Initialize config values and keep up with changes made from the UI."
   []
   (doseq [k (keys config-schema)]
@@ -101,6 +101,7 @@
   [filename]
   (and (string? filename)
        (some #(gstring/endsWith filename %) (:file-extensions @config))))
+
 
 ;;------------------------------------------------------------------------------
 ;; Old Config
@@ -117,6 +118,7 @@
          walk/keywordize-keys)
     (catch js/Object e nil)))
 
+
 (defn- read-old-file-extensions []
   (try
     (let [txt (ocall fs "readFileSync" old-file-extension-file "utf8")
@@ -132,18 +134,22 @@
         lines))
     (catch js/Object e nil)))
 
+
 (defn- handle-old-config-files!
   "Get data from old config files if still present, then delete them."
   []
-  (doseq [[k v] (read-old-config)]
-    (when (config-schema k)
-      (ocall (oget js/atom "config") "set" (config-key k) v)))
+  ;; old config
+  (when-let [old-config (read-old-config)]
+    (doseq [[k v] old-config]
+      (when (config-schema k)
+        (ocall (oget js/atom "config") "set" (config-key k) v)))
+    (ocall fs "unlink" old-config-file))
 
+  ;; old file extensions
   (when-let [old-file-extensions (clj->js (read-old-file-extensions))]
-    (ocall (oget js/atom "config") "set" (config-key :file-extensions) old-file-extensions))
+    (ocall (oget js/atom "config") "set" (config-key :file-extensions) old-file-extensions)
+    (ocall fs "unlink" old-file-extension-file)))
 
-  (ocall fs "removeSync" old-config-file)
-  (ocall fs "removeSync" old-file-extension-file))
 
 ;;------------------------------------------------------------------------------
 ;; Editor States Atom
@@ -153,6 +159,7 @@
   "Keep track of all the editor tabs and their Parinfer states."
   (atom {}))
 
+
 ;;------------------------------------------------------------------------------
 ;; Get Editor State
 ;;------------------------------------------------------------------------------
@@ -160,17 +167,15 @@
 (def autocomplete-el-selector "atom-text-editor.is-focused.autocomplete-active")
 
 
-(defn- is-autocomplete-showing? []
-  (if (util/qs autocomplete-el-selector) true false))
-
 (defn- get-active-editor
   "Returns the active editor if it has an ID"
   []
   (when-let [js-editor (ocall js/atom "workspace.getActiveTextEditor")]
     (when-let [id (oget js-editor "id")]
-      {:js-editor js-editor
-       :editor-id id
-       :editor-state (get @*editor-states id)})))
+      {:editor-id id
+       :editor-state (get @*editor-states id)
+       :js-editor js-editor})))
+
 
 ;;------------------------------------------------------------------------------
 ;; Status Bar
@@ -201,8 +206,8 @@
 
 
 (defn- click-status-bar-link [js-evt]
-  (.preventDefault js-evt)          ;; prevent href event
-  (.blur (util/by-id status-el-id)) ;; remove focus from the status bar element
+  (ocall js-evt "preventDefault") ;; prevent href event
+  (ocall (util/by-id status-el-id) "blur") ;; remove focus from the status bar element
   (toggle-mode!))
 
 
@@ -234,6 +239,7 @@
       (when-not (util/by-id status-el-id) (inject-status-el-into-dom!))
       (when-let [status-el (util/by-id status-el-id)]
         (oset! status-el "innerHTML" (link-text new-state))))))
+
 
 ;;------------------------------------------------------------------------------
 ;; Update Status Bar
@@ -284,6 +290,7 @@
 
 (add-watch *editor-states :toggle-status-classes toggle-status-classes!)
 
+
 ;;------------------------------------------------------------------------------
 ;; Error Markers
 ;;------------------------------------------------------------------------------
@@ -304,10 +311,12 @@
                             "class" error-marker-class))]
     (swap! error-marker-ids conj (oget marker "id"))))
 
+
 (defn marker-inside?
   [marker start-row end-row]
   (let [marker-row (oget (ocall marker "getBufferRange") "start" "row")]
     (<= start-row marker-row end-row)))
+
 
 (defn get-error-markers
   [js-editor start-row end-row]
@@ -315,12 +324,14 @@
        (filter #(@error-marker-ids (oget % "id")))
        (filter #(marker-inside? % start-row end-row))))
 
+
 (defn clear-error-markers
   [js-editor start-row end-row js-error]
   (let [markers (get-error-markers js-editor start-row end-row)
         ids (set (map #(oget % "id") markers))]
     (run! #(ocall % "destroy") markers)
     (swap! error-marker-ids set/difference ids)))
+
 
 ;;------------------------------------------------------------------------------
 ;; Apply Parinfer
@@ -519,9 +530,11 @@
    "{" 1
    "[" 1})
 
+
 (def default-tab-stops
   "Default tab stops (x-locations) for fallback."
   [0 2])
+
 
 (defn expand-tab-stops
   "Expand on Parinfer's tabStops (at open-parens) for our indentation style.
@@ -552,6 +565,7 @@
       (vec xs)
       default-tab-stops)))
 
+
 (defn next-stop
   "Get the next tab stop starting from x, moving in the dx direction (+1/-1)
   For example:
@@ -569,12 +583,14 @@
       -1 (or left 0)
       nil)))
 
+
 (defn get-line-indentation
   "Get the indentation length of the given line. Return nil if blank."
   [line]
   (when-not (gstring/isEmptyOrWhitespace line)
     (- (count line)
        (count (gstring/trimLeft line)))))
+
 
 (defn indent-line
   "Add or remove spaces from the front of the line."
@@ -586,6 +602,7 @@
       (when (gstring/isEmptyOrWhitespace removed)
         (ocall js-buffer "delete" range)))))
 
+
 (defn indent-lines
   "Add or remove spaces from the front of each non-empty line.
   Peforms change as single transaction."
@@ -595,6 +612,7 @@
       (doseq [row rows]
         (when-not (ocall js-buffer "isRowBlank" row)
           (indent-line js-buffer row delta))))))
+
 
 (defn tab-at-selection
   "Try indenting the selected lines according to structural tab stops.
@@ -614,6 +632,7 @@
     (when delta
       (indent-lines js-buffer rows delta)
       true)))
+
 
 (defn tab-at-cursor
   "Try indenting the line at the cursor according to structural tab stops.
@@ -636,6 +655,7 @@
       (indent-line js-buffer row (- nextX x))
       true)))
 
+
 (defn on-tab
   "Try indenting cursor or selection according to structural tabstops.
   Return true on success."
@@ -651,6 +671,7 @@
         (tab-at-selection js-editor (first selections) dx stops))
       (when-not multiple-cursors?
         (tab-at-cursor js-editor (first cursors) dx stops)))))
+
 
 ;;------------------------------------------------------------------------------
 ;; Atom Events
@@ -776,6 +797,7 @@
   (when-let [{:keys [editor-id]} (get-active-editor)]
     (swap! *editor-states assoc editor-id :disabled)))
 
+
 (defn- toggle-mode! []
   (let [{:keys [editor-id editor-state]} (get-active-editor)]
     (when editor-state
@@ -785,12 +807,14 @@
       ;; run parinfer in their new mode
       (on-change-cursor-position nil))))
 
+
 (defn- next-tab-stop! [e dx]
   (let [tabbed? (when-let [{:keys [js-editor editor-state]} (get-active-editor)]
                   (when (not= :disabled editor-state)
                     (on-tab js-editor dx)))]
     (when-not tabbed?
       (ocall e "abortKeyBinding"))))
+
 
 ;;------------------------------------------------------------------------------
 ;; Package-required events
@@ -831,11 +855,11 @@
 ;;------------------------------------------------------------------------------
 
 (oset! js/module "exports"
-  (clj->js
-    {:activate activate
-     :deactivate util/always-nil
-     :serialize util/always-nil
-     :config config-schema}))
+  (js-obj "activate" activate
+          "deactivate" util/always-nil
+          "serialize" util/always-nil
+          "config" (clj->js config-schema)))
+
 
 ;; noop - needed for :nodejs CLJS build
 (set! *main-cli-fn* util/always-nil)
