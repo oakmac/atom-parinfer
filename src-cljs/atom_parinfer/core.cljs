@@ -80,7 +80,7 @@
 (defn- config-key
   "Config keys must be namespaced."
   [k]
-  (str "Parinfer." (name k)))
+  (str "parinfer." (name k)))
 
 
 (def config
@@ -109,6 +109,7 @@
 
 (def old-config-file (str (ocall fs "getHomeDirectory") "/.atom-parinfer-config.json"))
 (def old-file-extension-file (str (ocall fs "getHomeDirectory") "/.parinfer-file-extensions.txt"))
+
 
 (defn- read-old-config []
   (try
@@ -856,9 +857,9 @@
 
 (oset! js/module "exports"
   (js-obj "activate" activate
+          "config" (clj->js config-schema)
           "deactivate" util/always-nil
-          "serialize" util/always-nil
-          "config" (clj->js config-schema)))
+          "serialize" util/always-nil))
 
 
 ;; noop - needed for :nodejs CLJS build

@@ -119,7 +119,7 @@ cd ~
 git clone https://github.com/oakmac/atom-parinfer.git
 
 # symlink the repo to the Atom packages folder
-ln -s ~/atom-parinfer ~/.atom/packages/
+ln -s ~/atom-parinfer ~/.atom/packages/parinfer
 
 # compile CLJS files
 lein cljsbuild auto
