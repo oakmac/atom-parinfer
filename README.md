@@ -114,19 +114,6 @@ the same approach [36 years ago] :)
 [Shaun]:https://github.com/shaunlebron/
 [36 years ago]:images/zwei-top-level-expression-hack.png
 
-## Future Features
-
-Future features include:
-
-* JSHint-like comments to automatically "turn on" Parinfer for files ([Issue #5](https://github.com/oakmac/atom-parinfer/issues/5))
-* JSHint-like comments to tell Parinfer to ignore sections of your code ([Issue #6](https://github.com/oakmac/atom-parinfer/issues/6))
-
-More options and configuration settings are planned for future releases. Browse
-the [issues] for an idea of future features. Create a new issue if you can think
-of a useful feature :)
-
-[issues]:https://github.com/oakmac/atom-parinfer/issues
-
 ## Plugin Development Setup
 
 Install [Leiningen].
