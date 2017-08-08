@@ -270,7 +270,8 @@
   "Sets the current parinfer status class on the editor element.
    Used for CSS selecting based on status."
   [js-editor mode]
-  (let [js-editor-element (oget js-editor "editor")
+  (let [js-editor-element (or (oget js-editor "element")
+                              (oget js-editor "editorElement"))
         js-classlist (when js-editor-element (oget js-editor-element "classList"))]
     (when js-classlist
       (case mode
