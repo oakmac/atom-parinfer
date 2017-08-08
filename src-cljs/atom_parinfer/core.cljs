@@ -56,8 +56,8 @@
     :title "Force Balance (Recommend ON)"
     :description
     (str "Code is auto-balanced in a majority of cases. But what to do when an unmatched close-paren cannot be resolved automatically?<br/>"
-         "- __ON__: Remove it to stay 100% balanced, at the cost of some unintended inline restructuring.<br/>"
-         "- __OFF__: Highlight it so you can manually correct it without losing structure.")
+         "- __ON__: Always stay 100% balanced, at the cost of sometimes unintended changes.<br/>"
+         "- __OFF__: Highlight the imbalance for manual correction.")
     :type "boolean"
     :default true}
 
