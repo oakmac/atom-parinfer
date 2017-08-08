@@ -56,8 +56,10 @@
     :title "Force Balance (Default ON)"
     :description
     (str "Parens are auto-balanced most of the time, but sometimes there are edge cases with unmatched closing parens on a single line.<br />"
-         "- __ON__: Always stay 100% balanced regardless of previous structure.<br />"
-         "- __OFF__: Allow some imbalance to prevent loss of structure.")
+         "<table>"
+         "<tr><td>__ON__&nbsp;</td><td>- Always stay 100% balanced regardless of previous structure:</td><td><img src=\"atom://parinfer/images/forcebalance-on.gif\" height=\"21px\"></td></tr>"
+         "<tr><td>__OFF__&nbsp;</td><td>- Allow some imbalance to prevent loss of structure:</td><td><img src=\"atom://parinfer/images/forcebalance-off.gif\" height=\"21px\"></td></tr>"
+         "</table>")
     :type "boolean"
     :default true}
 
