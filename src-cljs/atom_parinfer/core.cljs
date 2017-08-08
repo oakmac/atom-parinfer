@@ -53,17 +53,17 @@
 
    :force-balance?
    {:order 2
-    :title "Force Balance (Recommend ON)"
+    :title "Force Balance (Default ON)"
     :description
-    (str "Sometimes your intended paren structure cannot be inferred (there is no indentation on a single line, for example).<br />"
-         "- __ON__: Always stay 100% balanced.<br />"
-         "- __OFF__: Allow some imbalanced code. Highlight the imbalanced characters for manual correction.")
+    (str "Parens are auto-balanced most of the time, but sometimes there are edge cases with unmatched closing parens on a single line.<br />"
+         "- __ON__: Always stay 100% balanced regardless of previous structure.<br />"
+         "- __OFF__: Allow some imbalance to prevent loss of structure.")
     :type "boolean"
     :default true}
 
    :show-open-file-dialog?
    {:order 3
-    :title "Warn when opening bad file (Strong Recommend ON)"
+    :title "Warn when opening bad file (Recommend ON)"
     :description "Show a dialog when opening a file with unbalanced parentheses or incorrect indentation."
     :type "boolean"
     :default true}
