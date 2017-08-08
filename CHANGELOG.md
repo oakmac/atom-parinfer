@@ -1,3 +1,10 @@
+## 1.19.0 - 2017-08-07
+* Upgrade to parinfer.js v3.10.0
+* Use Atom Config instead of files in the user's home directory.
+* Add support for `smartMode`, `tabStops`, and error markers (thanks [@shaunlebron]!)
+
+[@shaunlebron]:https://github.com/shaunlebron
+
 ## 1.18.0 - 2017-06-03
 * Use Google Closure Advanced Mode optimizations. Significantly reduce plugin file size.
 
