@@ -80,10 +80,10 @@ check out the [Parlinter] project.
 
 ### Hotkeys and Status Bar
 
-|  Command              | Windows/Linux                | Mac                         |
-|-----------------------|-----------------------------:|-----------------------------|
-| Turn on / Toggle Mode | <kbd>Ctrl</kbd>+<kbd>(</kbd> | <kbd>Cmd</kbd>+<kbd>(</kbd> |
-| Turn off              | <kbd>Ctrl</kbd>+<kbd>)</kbd> | <kbd>Cmd</kbd>+<kbd>)</kbd> |
+|  Command              | Windows/Linux                                 | Mac                                          |
+|-----------------------|----------------------------------------------:|----------------------------------------------|
+| Turn on / Toggle Mode | <kbd>Ctrl</kbd>+<kbd>shift</kbd>+<kbd>(</kbd> | <kbd>Cmd</kbd>+<kbd>shift</kbd>+<kbd>(</kbd> |
+| Turn off              | <kbd>Ctrl</kbd>+<kbd>shift</kbd>+<kbd>)</kbd> | <kbd>Cmd</kbd>+<kbd>shift</kbd>+<kbd>)</kbd> |
 
 The status bar will indicate which mode you are in or show nothing if Parinfer
 is turned off.
