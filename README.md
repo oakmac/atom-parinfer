@@ -82,8 +82,8 @@ check out the [Parlinter] project.
 
 |  Command              | Windows/Linux                                 | Mac                                          |
 |-----------------------|----------------------------------------------:|----------------------------------------------|
-| Turn on / Toggle Mode | <kbd>Ctrl</kbd>+<kbd>shift</kbd>+<kbd>(</kbd> | <kbd>Cmd</kbd>+<kbd>shift</kbd>+<kbd>(</kbd> |
-| Turn off              | <kbd>Ctrl</kbd>+<kbd>shift</kbd>+<kbd>)</kbd> | <kbd>Cmd</kbd>+<kbd>shift</kbd>+<kbd>)</kbd> |
+| Turn on / Toggle Mode | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>(</kbd> | <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>(</kbd> |
+| Turn off              | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>)</kbd> | <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>)</kbd> |
 
 The status bar will indicate which mode you are in or show nothing if Parinfer
 is turned off.
