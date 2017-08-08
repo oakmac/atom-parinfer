@@ -1,4 +1,4 @@
-## 1.19.2 - 2017-08-08
+## 1.19.3 - 2017-08-08
 * Remove `TextEditor.editorElement` depreciation warning. [Issue #92]
 
 ## 1.19.0 - 2017-08-07
