@@ -46,8 +46,8 @@
 (def config-schema
   {:use-smart-mode?
    {:order 1
-    :title "Smart Mode (Beta)"
-    :description "Replace Indent Mode with Smart Mode (various improvements to preserve structure while typing)"
+    :title "Smart Mode (Experimental)"
+    :description "It's like Indent Mode, but tries to preserve structure too. Requires restart to take effect."
     :type "boolean"
     :default false}
 
@@ -55,9 +55,9 @@
    {:order 2
     :title "Force Balance (Recommend ON)"
     :description
-    (str "Code is auto-balanced in a majority of cases. But what to do when an unmatched close-paren cannot be resolved automatically?<br/>"
-         "- __ON__: Always stay 100% balanced, at the cost of sometimes unintended changes.<br/>"
-         "- __OFF__: Highlight the imbalance for manual correction.")
+    (str "Sometimes your intended paren structure cannot be inferred (there is no indentation on a single line, for example).<br />"
+         "- __ON__: Always stay 100% balanced.<br />"
+         "- __OFF__: Allow some imbalanced code. Highlight the imbalanced characters for manual correction.")
     :type "boolean"
     :default true}
 
