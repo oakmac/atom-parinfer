@@ -273,18 +273,21 @@
   "Sets the current parinfer status class on the editor element.
    Used for CSS selecting based on status."
   [js-editor mode]
-  (when-let [js-classlist (oget js-editor "?editorElement.?classList")]
-    (case mode
-      :indent-mode
-      (do (ocall js-classlist "add" indent-mode-class)
-          (ocall js-classlist "remove" paren-mode-class))
+  (let [js-editor-element (or (oget js-editor "element")
+                              (oget js-editor "editorElement"))
+        js-classlist (when js-editor-element (oget js-editor-element "classList"))]
+    (when js-classlist
+      (case mode
+        :indent-mode
+        (do (ocall js-classlist "add" indent-mode-class)
+            (ocall js-classlist "remove" paren-mode-class))
 
-      :paren-mode
-      (do (ocall js-classlist "add" paren-mode-class)
-          (ocall js-classlist "remove" indent-mode-class))
+        :paren-mode
+        (do (ocall js-classlist "add" paren-mode-class)
+            (ocall js-classlist "remove" indent-mode-class))
 
-      ;; else disabled
-      (ocall js-classlist "remove" indent-mode-class paren-mode-class))))
+        ;; else disabled
+        (ocall js-classlist "remove" indent-mode-class paren-mode-class)))))
 
 
 (defn- toggle-status-classes! [_atm _kwd _old-states new-states]

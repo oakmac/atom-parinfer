@@ -1,3 +1,6 @@
+## 1.19.1-3 - 2017-08-08
+* Remove `TextEditor.editorElement` depreciation warning. [Issue #92]
+
 ## 1.19.0 - 2017-08-07
 * Upgrade to parinfer.js v3.10.0
 * Use Atom Config instead of files in the user's home directory.
@@ -95,5 +98,6 @@
 [Issue #67]:https://github.com/oakmac/atom-parinfer/issues/67
 [Issue #73]:https://github.com/oakmac/atom-parinfer/issues/73
 [Issue #74]:https://github.com/oakmac/atom-parinfer/issues/74
+[Issue #92]:https://github.com/oakmac/atom-parinfer/issues/92
 [PR #43]:https://github.com/oakmac/atom-parinfer/pull/43
 [PR #59]:https://github.com/oakmac/atom-parinfer/pull/59
