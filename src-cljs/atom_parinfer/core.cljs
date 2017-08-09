@@ -47,7 +47,7 @@
   {:use-smart-mode?
    {:order 1
     :title "Smart Mode (Experimental)"
-    :description "It's like Indent Mode, but tries to preserve structure too. Requires restart to take effect."
+    :description "It's like Indent Mode, but tries to preserve structure too."
     :type "boolean"
     :default false}
 
@@ -89,13 +89,16 @@
   "The user's current choices for each config."
   (atom {}))
 
+(declare refresh-all-change-events!)
 
 (defn- observe-config!
   "Initialize config values and keep up with changes made from the UI."
   []
   (doseq [k (keys config-schema)]
     (ocall (oget js/atom "config") "observe" (config-key k)
-      #(swap! config assoc k %))))
+      #(swap! config assoc k %)))
+  (ocall (oget js/atom "config") "onDidChange" (config-key :use-smart-mode?)
+    #(refresh-all-change-events!)))
 
 
 (defn- file-has-watched-extension?
@@ -681,13 +684,49 @@
 
 ;;------------------------------------------------------------------------------
 ;; Atom Events
-;;------------------------------------------------------------------------------
+;------------------------------------------------------------------------------
+
+(def change-subscriptions
+  "Editor id -> list of subscriptions for `.dispose`ing"
+  (atom {}))
+
+
+(declare on-did-change-text)
+(declare on-change-cursor-position)
+
+(defn- add-change-events! [js-editor]
+  (when (and js-editor (oget js-editor "id"))
+    (let [js-buffer (ocall js-editor "getBuffer")
+          subs (if (:use-smart-mode? @config)
+                 [(ocall js-buffer "onDidChangeText" on-did-change-text)
+                  (ocall js-editor "onDidChangeCursorPosition" on-change-cursor-position)]
+                 [(ocall js-editor "onDidChangeSelectionRange" debounced-apply-parinfer)])]
+      (swap! change-subscriptions assoc (oget js-editor "id") subs))))
+
+
+(defn- remove-change-events! [js-editor]
+  (when (and js-editor (oget js-editor "id"))
+    (let [editor-id (oget js-editor "id")]
+      (run! #(ocall % "dispose") (@change-subscriptions editor-id))
+      (swap! change-subscriptions update editor-id empty))))
+
+
+(defn- refresh-change-events! [js-editor]
+  (remove-change-events! js-editor)
+  (add-change-events! js-editor))
+
+
+(defn- refresh-all-change-events! []
+  (let [js-editors (ocall js/atom "workspace.getTextEditors")]
+    (run! refresh-change-events! js-editors)))
+
 
 (defn- goodbye-editor
   "Runs when an editor tab is closed."
   [js-editor]
   (when (and js-editor (oget js-editor "id"))
-    (swap! *editor-states dissoc (oget js-editor "id"))))
+    (swap! *editor-states dissoc (oget js-editor "id"))
+    (remove-change-events! js-editor)))
 
 
 (defn- confirm-paren-mode-msg [filename num-lines-changed]
@@ -728,16 +767,12 @@
   [js-editor]
   (let [editor-id (oget js-editor "id")
         init-parinfer? (file-has-watched-extension? (ocall js-editor "getPath"))
-        current-file (ocall js-editor "getTitle")
-        js-buffer (ocall js-editor "getBuffer")]
+        current-file (ocall js-editor "getTitle")]
     ;; add this editor state to our atom
     (swap! *editor-states assoc editor-id :disabled)
 
     ;; listen to the buffer and editor change events
-    (if (:use-smart-mode? @config)
-      (do (ocall js-buffer "onDidChangeText" on-did-change-text)
-          (ocall js-editor "onDidChangeCursorPosition" on-change-cursor-position))
-      (ocall js-editor "onDidChangeSelectionRange" debounced-apply-parinfer))
+    (add-change-events! js-editor)
 
     ;; add the destroy event
     (ocall js-editor "onDidDestroy" goodbye-editor)
