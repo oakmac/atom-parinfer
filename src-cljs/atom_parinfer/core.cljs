@@ -89,16 +89,18 @@
   "The user's current choices for each config."
   (atom {}))
 
+
 (declare refresh-all-change-events!)
+
 
 (defn- observe-config!
   "Initialize config values and keep up with changes made from the UI."
   []
   (doseq [k (keys config-schema)]
     (ocall (oget js/atom "config") "observe" (config-key k)
-      #(swap! config assoc k %)))
+           #(swap! config assoc k %)))
   (ocall (oget js/atom "config") "onDidChange" (config-key :use-smart-mode?)
-    #(refresh-all-change-events!)))
+         (fn [] (refresh-all-change-events!))))
 
 
 (defn- file-has-watched-extension?

@@ -1,3 +1,6 @@
+## 1.20.0 - 2017-08-08
+* Do not require restart when switching between Indent and Smart mode.
+
 ## 1.19.1-3 - 2017-08-08
 * Remove `TextEditor.editorElement` depreciation warning. [Issue #92]
 
