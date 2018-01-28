@@ -1,3 +1,6 @@
+## 1.21.0 - 2018-01-28
+* Fix for Atom v1.23.3 [PR #97]
+
 ## 1.20.0 - 2017-08-08
 * Do not require restart when switching between Indent and Smart mode.
 
@@ -104,3 +107,4 @@
 [Issue #92]:https://github.com/oakmac/atom-parinfer/issues/92
 [PR #43]:https://github.com/oakmac/atom-parinfer/pull/43
 [PR #59]:https://github.com/oakmac/atom-parinfer/pull/59
+[PR #97]:https://github.com/oakmac/atom-parinfer/pull/97
