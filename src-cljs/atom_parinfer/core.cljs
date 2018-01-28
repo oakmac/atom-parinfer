@@ -393,7 +393,7 @@
 (defn- atom-changes->parinfer-changes
   "Convert Atom's changes object into the format that Parinfer expects."
   [js-atom-changes start-row]
-  (if (and (object? js-atom-changes)
+  (if (and js-atom-changes
            (array? (oget js-atom-changes "?changes")))
     (ocall (oget js-atom-changes "changes") "map"
       (fn [ch]
