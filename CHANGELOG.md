@@ -1,3 +1,6 @@
+## 1.22.0 - 2018-02-04
+* Update to parinfer.js v3.12.0 [PR #99]
+
 ## 1.21.0 - 2018-01-28
 * Fix for Atom v1.23.3 [PR #97]
 
@@ -108,3 +111,4 @@
 [PR #43]:https://github.com/oakmac/atom-parinfer/pull/43
 [PR #59]:https://github.com/oakmac/atom-parinfer/pull/59
 [PR #97]:https://github.com/oakmac/atom-parinfer/pull/97
+[PR #99]:https://github.com/oakmac/atom-parinfer/pull/99
