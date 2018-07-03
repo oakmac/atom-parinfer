@@ -1,3 +1,7 @@
+## 1.23.0 - 2018-07-03
+* Remove `TextBuffer.setTextInRange` depreciation warning. [Issue #101]
+* Bump ClojureScript version to 1.10.339
+
 ## 1.22.0 - 2018-02-04
 * Update to parinfer.js v3.12.0 [PR #99]
 
