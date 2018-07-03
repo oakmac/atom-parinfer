@@ -1,4 +1,4 @@
-(defproject atom-parinfer "1.20.0"
+(defproject atom-parinfer "1.22.0"
   :description "Parinfer extension for the Atom editor."
 
   :license {:name "ISC License"
@@ -6,12 +6,11 @@
             :distribution :repo}
 
   :dependencies
-    [[org.clojure/clojure "1.8.0"]
-     [clojure-future-spec "1.9.0-alpha16-1"]
-     [org.clojure/clojurescript "1.9.562"]
-     [binaryage/oops "0.5.5"]]
+    [[org.clojure/clojure "1.9.0"]
+     [org.clojure/clojurescript "1.10.339"]
+     [binaryage/oops "0.6.2"]]
 
-  :plugins [[lein-cljsbuild "1.1.6"]]
+  :plugins [[lein-cljsbuild "1.1.7"]]
 
   :source-paths ["src"]
 

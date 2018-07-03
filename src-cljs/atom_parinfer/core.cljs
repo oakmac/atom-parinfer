@@ -1,9 +1,9 @@
 (ns atom-parinfer.core
   (:require
     [atom-parinfer.util :as util]
+    [clojure.set :as set]
     [clojure.string :as str]
     [clojure.walk :as walk]
-    [clojure.set :as set]
     [goog.array :as garray]
     [goog.functions :as gfunctions]
     [goog.string :as gstring]
@@ -457,7 +457,7 @@
                       (ocall parinfer "smartMode" text-to-infer js-opts)
                       (ocall parinfer "indentMode" text-to-infer js-opts)))
         parinfer-success? (true? (oget js-result "success"))
-        js-error (oget js-result "error")
+        js-error (oget js-result "?error")
         ;; TODO: save tabStops here
         new-cursor (if parinfer-success?
                      (js-obj "column" (oget js-result "cursorX")
@@ -465,10 +465,10 @@
                      nil)
         inferred-text (if parinfer-success? (oget js-result "text") nil)]
 
-    (reset! previous-tabstops (oget js-result "tabStops"))
+    (reset! previous-tabstops (oget js-result "?tabStops"))
 
     ;; update error markers
-    (clear-error-markers js-editor start-row end-row (oget js-result "error"))
+    (clear-error-markers js-editor start-row end-row (oget js-result "?error"))
     (when js-error
       (add-error-marker js-editor start-row js-error)
       (when-let [extra (oget js-error "extra")]
@@ -478,9 +478,10 @@
     (when (and (string? inferred-text)
                (not= inferred-text text-to-infer))
       (reset! monitor-cursor? false)
-      (ocall js-editor "setTextInBufferRange" (array (array start-row 0) (array end-row 0))
-                                              inferred-text
-                                              (js-obj "undo" "skip"))
+      (let [js-buffer (ocall js-editor "getBuffer")]
+        (ocall js-editor "setTextInBufferRange" (array (array start-row 0) (array end-row 0))
+                                                inferred-text)
+        (ocall js-buffer "groupLastChanges"))
 
       (if (and single-cursor? new-cursor)
         ;; update the cursor position with the new cursor from Parinfer
@@ -502,7 +503,7 @@
           ;; onDidChangeSelectionRange which we will just identify by a non-nil
           ;; `.selection` property.
           selection-debounce? (and js-changes
-                                   (not (nil? (oget js-changes "selection"))))
+                                   (oget js-changes "?selection"))
 
           ;; js-changes is null when the cursor caused this event
           cursor-change? (nil? js-changes)
@@ -563,7 +564,7 @@
         prevX #(or (last xs) -1)]
     (doseq [stop stops]
       (let [x (oget stop "x")
-            argX (oget stop "argX")
+            argX (oget stop "?argX")
             ch (oget stop "ch")
             insideX (+ x (paren->spaces ch))]
         (when (>= (prevX) x)
