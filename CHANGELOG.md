@@ -112,6 +112,7 @@
 [Issue #73]:https://github.com/oakmac/atom-parinfer/issues/73
 [Issue #74]:https://github.com/oakmac/atom-parinfer/issues/74
 [Issue #92]:https://github.com/oakmac/atom-parinfer/issues/92
+[Issue #101]:https://github.com/oakmac/atom-parinfer/issues/101
 [PR #43]:https://github.com/oakmac/atom-parinfer/pull/43
 [PR #59]:https://github.com/oakmac/atom-parinfer/pull/59
 [PR #97]:https://github.com/oakmac/atom-parinfer/pull/97
