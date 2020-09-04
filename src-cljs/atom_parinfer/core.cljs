@@ -70,8 +70,16 @@
     :type "boolean"
     :default true}
 
-   :file-extensions
+   :comment-char
    {:order 4
+    :title "Comment Character"
+    :description "Set the comment character for the current lisp"
+    :default ";"
+    :type "string"
+    :items {:type "string"}}
+
+   :file-extensions
+   {:order 5
     :title "File Extensions"
     :description "Auto-enable Parinfer for these file extensions."
     :default default-file-extensions
@@ -442,6 +450,7 @@
                         "changes" (atom-changes->parinfer-changes js-atom-changes start-row)
 
                         "forceBalance" (:force-balance? @config)
+                        "commentChar" (:comment-char @config)
                         "partialResult" false)
 
         ;; save this cursor information for the next iteration

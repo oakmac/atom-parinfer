@@ -1,3 +1,6 @@
+## 1.24.0 - 2019-09-04
+* Add configurable comment character
+
 ## 1.23.0 - 2018-07-03
 * Remove `TextBuffer.setTextInRange` depreciation warning. [Issue #101]
 * Bump ClojureScript version to 1.10.339
