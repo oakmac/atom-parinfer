@@ -189,11 +189,12 @@
 
 (defn- get-comment-chars
   "returns the commentChars option for a file extension
-  nil if there is no commentChars option"
+  nil if there is no commentChars option or file-ext is invalid"
   [file-ext]
-  (or
-    (get (:comment-chars @config) file-ext)
-    (get default-comment-chars file-ext)))
+  (when (and (string? file-ext) (not (str/blank? file-ext)))
+    (or
+      (get (:comment-chars @config) file-ext)
+      (get default-comment-chars file-ext))))
 
 
 ;; -----------------------------------------------------------------------------
@@ -484,9 +485,11 @@
 
 
 (defn extname
-  "get file extension for file"
+  "get file extension for file
+  returns nil if f is not valid"
   [f]
-  (ocall path "extname" f))
+  (when (and (string? f) (not (str/blank? f)))
+    (ocall path "extname" f)))
 
 
 (def previous-cursor (atom nil))
