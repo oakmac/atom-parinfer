@@ -11,10 +11,7 @@
     "Lisp"
   ],
   "author": "Chris Oakman <chris@oakmac.com> (https://chrisoakman.com/)",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/oakmac/atom-parinfer.git"
-  },
+  "repository": "https://github.com/oakmac/atom-parinfer",
   "bugs": "https://github.com/oakmac/atom-parinfer/issues",
   "license": "ISC",
   "main": "./lib/atom-parinfer.js",
