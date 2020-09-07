@@ -46,7 +46,7 @@
     ".janet"}) ;; Janet
 
 
-(def file-ext->comment-chars
+(def default-comment-chars
   "some lisps use a different character for comment than semicolon (;)
   this is a mapping of file extension --> commentChars"
   {".janet" ["#"]})
@@ -193,7 +193,7 @@
   [file-ext]
   (or
     (get (:comment-chars @config) file-ext)
-    (get file-ext->comment-chars file-ext)))
+    (get default-comment-chars file-ext)))
 
 
 ;; -----------------------------------------------------------------------------
