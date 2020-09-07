@@ -1,4 +1,4 @@
-(defproject atom-parinfer "1.23.0"
+(defproject atom-parinfer "1.24.0"
   :description "Parinfer extension for the Atom editor."
 
   :author "Chris Oakman <chris@oakmac.com>"
@@ -9,9 +9,9 @@
             :distribution :repo}
 
   :dependencies
-    [[org.clojure/clojure "1.10.1"]
-     [org.clojure/clojurescript "1.10.764"]
-     [binaryage/oops "0.7.0"]]
+  [[org.clojure/clojure "1.10.1"]
+   [org.clojure/clojurescript "1.10.764"]
+   [binaryage/oops "0.7.0"]]
 
   :plugins [[lein-cljsbuild "1.1.7"]]
 

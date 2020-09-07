@@ -119,12 +119,14 @@
   (atom default-config))
 
 
-(defn- valid-comment-chars?
-  "FIXME: write me"
-  [m]
+(defn- valid-comment-chars-map? [m]
   (and
-    (map? m)))
+    (map? m)
+    (every? string? (keys m))
+    (every? #(or (vector? %) (string? %)) (vals m))))
 
+(defn- valid-comment-chars? [cc]
+  (or (nil? cc) (valid-comment-chars-map? cc)))
 
 (defn- valid-config-values?
   "sanity-check the config values"
@@ -140,9 +142,6 @@
 
 (set-validator! config valid-config-values?)
 
-(defn- warn [msg]
-  ;; FIXME: write this
-  (js/console.warn msg))
 
 (defmulti set-config-value!
   (fn [config-key _new-value]
@@ -163,24 +162,20 @@
   (let [overrides-map (try
                         (edn/read-string new-value)
                         (catch js/Object _err nil))]
-    (cond
-      ;; FIXME: bad EDN
-      ;; FIXME: bad format
-      (valid-comment-chars? overrides-map) (swap! config assoc cfg-key overrides-map)
-      :else nil)))
+    (if (valid-comment-chars-map? overrides-map)
+      (swap! config assoc cfg-key overrides-map)
+      (swap! config assoc cfg-key nil))))
 
 (defmethod set-config-value! :default
   [cfg-key _new-value]
-  (warn (str "Unable to set value for unknown config key:" cfg-key)))
+  (util/warn "Unable to set value for unknown config key:" cfg-key))
 
 
 (defn- observe-config!
   "Initialize config values and keep up with changes made from the UI."
   []
   (doseq [k (keys config-schema)]
-    (ocall (oget js/atom "config") "observe" (config-key k)
-           (fn [new-value]
-             (set-config-value! k new-value))))
+    (ocall (oget js/atom "config") "observe" (config-key k) #(set-config-value! k %)))
   (ocall (oget js/atom "config") "onDidChange" (config-key :use-smart-mode?)
          (fn [] (refresh-all-change-events!))))
 

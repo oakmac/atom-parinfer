@@ -21,6 +21,12 @@
   (log new-value)
   (js-log "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"))
 
+(defn warn
+  ([msg]
+   (ocall js/console "warn" msg))
+  ([msg1 msg2]
+   (ocall js/console "warn" msg1 msg2)))
+
 ;; -----------------------------------------------------------------------------
 ;; DOM
 
@@ -35,7 +41,6 @@
 
 ;; -----------------------------------------------------------------------------
 ;; String
-;; -----------------------------------------------------------------------------
 
 (defn split-lines
   "Same as clojure.string/split-lines, except it doesn't remove empty lines at

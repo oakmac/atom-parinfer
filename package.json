@@ -1,23 +1,21 @@
 {
   "name": "parinfer",
-  "main": "./lib/atom-parinfer.js",
-  "version": "999.24.333",
+  "version": "1.24.0",
   "description": "Automatically infer closing parens based on indentation. An essential tool for writing Lisp code.",
-  "keywords": [
-    "Parinfer",
-    "Paredit",
-    "Clojure",
-    "ClojureScript",
-    "CLJS",
-    "Lisp"
-  ],
+  "keywords": ["Parinfer", "Paredit", "Clojure", "ClojureScript", "CLJS", "Lisp"],
+
+  "author": "Chris Oakman <chris@oakmac.com> (https://chrisoakman.com/)",
   "repository": "https://github.com/oakmac/atom-parinfer",
+  "bugs": "https://github.com/oakmac/atom-parinfer/issues",
   "license": "ISC",
+
+  "main": "./lib/atom-parinfer.js",
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
   },
+
   "dependencies": {
-    "fs-plus": "3.1.1",
-    "@chrisoakman/parinfer": "3.13.0"
+    "@chrisoakman/parinfer": "3.13.0",
+    "fs-plus": "3.1.1"
   }
 }
