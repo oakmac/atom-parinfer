@@ -1,3 +1,6 @@
+## 1.24.1 - 2020-09-07
+* Fix depreciation warning - [Issue #109]
+
 ## 1.24.0 - 2020-09-07
 * Add configurable comment character. Thank you [@swlkr] for [PR #106]!
 * Update to parinfer.js v3.13.0 (@oakmac fork)
@@ -123,6 +126,7 @@
 [Issue #74]:https://github.com/oakmac/atom-parinfer/issues/74
 [Issue #92]:https://github.com/oakmac/atom-parinfer/issues/92
 [Issue #101]:https://github.com/oakmac/atom-parinfer/issues/101
+[Issue #109]:https://github.com/oakmac/atom-parinfer/issues/109
 [PR #43]:https://github.com/oakmac/atom-parinfer/pull/43
 [PR #59]:https://github.com/oakmac/atom-parinfer/pull/59
 [PR #97]:https://github.com/oakmac/atom-parinfer/pull/97
