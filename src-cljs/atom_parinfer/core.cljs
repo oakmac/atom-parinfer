@@ -1,13 +1,14 @@
 (ns atom-parinfer.core
   (:require
-    [atom-parinfer.util :as util]
-    [clojure.set :as set]
-    [clojure.string :as str]
-    [clojure.walk :as walk]
-    [goog.array :as garray]
-    [goog.functions :as gfunctions]
-    [goog.string :as gstring]
-    [oops.core :refer [ocall oget oset!]]))
+   [atom-parinfer.util :as util]
+   [clojure.edn :as edn]
+   [clojure.set :as set]
+   [clojure.string :as str]
+   [clojure.walk :as walk]
+   [goog.array :as garray]
+   [goog.functions :as gfunctions]
+   [goog.string :as gstring]
+   [oops.core :refer [ocall oget oset!]]))
 
 (declare
   on-change-cursor-position
@@ -18,6 +19,7 @@
 ;; -----------------------------------------------------------------------------
 ;; JS Requires
 
+(def path     (js/require "path"))
 (def fs       (js/require "fs-plus"))
 (def parinfer (js/require "@chrisoakman/parinfer"))
 (def package  (js/require "../package.json"))
@@ -28,32 +30,39 @@
 ;; Config
 
 (def default-file-extensions
-  [".clj"  ;; Clojure
-   ".cljs" ;; ClojureScript
-   ".cljc" ;; Clojure + ClojureScript
-   ".edn"  ;; Extensible Data Notation
-   ".boot" ;; Boot build script (Clojure build framework)
-   ".lfe"  ;; Lisp Flavored Erlang
-   ".rkt"  ;; Racket
-   ".scm"  ;; Scheme
-   ".lisp" ;; Lisp
-   ".lsp"  ;; Lisp
-   ".cl"   ;; Common Lisp
-   ".el"]) ;; Emacs Lisp
+  #{".clj"  ;; Clojure
+    ".cljs" ;; ClojureScript
+    ".cljc" ;; Clojure + ClojureScript
+    ".edn"  ;; Extensible Data Notation
+    ".boot" ;; Boot build script (Clojure build framework)
+    ".lfe"  ;; Lisp Flavored Erlang
+    ".rkt"  ;; Racket
+    ".scm"  ;; Scheme
+    ".lisp" ;; Lisp
+    ".lsp"  ;; Lisp
+    ".cl"   ;; Common Lisp
+    ".el"   ;; Emacs Lisp
+    ".fnl"  ;; Fennel
+    ".janet"}) ;; Janet
 
+
+(def file-ext->comment-chars
+  "some lisps use a different character for comment than semicolon (;)
+  this is a mapping of file extension --> commentChars"
+  {".janet" ["#"]})
 
 
 (def config-schema
   {:use-smart-mode?
    {:order 1
-    :title "Smart Mode (Experimental)"
+    :title "Smart Mode (recommended)"
     :description "It's like Indent Mode, but tries to preserve structure too."
     :type "boolean"
-    :default false}
+    :default true}
 
    :force-balance?
    {:order 2
-    :title "Force Balance (Default ON)"
+    :title "Force Balance (recommended)"
     :description
     (str "Parens are auto-balanced most of the time, but sometimes there are edge cases with unmatched closing parens on a single line.<br />"
          "<table>"
@@ -65,7 +74,7 @@
 
    :show-open-file-dialog?
    {:order 3
-    :title "Warn when opening bad file (Recommend ON)"
+    :title "Warn when opening bad file (recommended)"
     :description "Show a dialog when opening a file with unbalanced parentheses or incorrect indentation."
     :type "boolean"
     :default true}
@@ -76,7 +85,27 @@
     :description "Auto-enable Parinfer for these file extensions."
     :default default-file-extensions
     :type "array"
-    :items {:type "string"}}})
+    :items {:type "string"}}
+
+   :comment-chars
+   {:order 5
+    :title "Comment Characters"
+    :description (str "Some lisps use a character other than semicolon (`;`) for comments. "
+                      "Override the default comment characters here with an EDN map of file-extension --> comment characters. "
+                      "Most common defaults are already provided, including `#` for Janet."
+                      "<br><br>"
+                      "Example: `{\".clj\" [\";\"], \".janet\" [\"#\"]}`"
+                      "<br>")
+    :default ""
+    :type "string"}})
+
+
+(def default-config
+  {:use-smart-mode? true
+   :force-balance? true
+   :show-open-file-dialog? true
+   :file-extensions default-file-extensions
+   :comment-chars nil})
 
 
 (defn- config-key
@@ -87,7 +116,62 @@
 
 (def config
   "The user's current choices for each config."
-  (atom {}))
+  (atom default-config))
+
+
+(defn- valid-comment-chars?
+  "FIXME: write me"
+  [m]
+  (and
+    (map? m)))
+
+
+(defn- valid-config-values?
+  "sanity-check the config values"
+  [cfg]
+  (and
+    (map? cfg)
+    (boolean? (:use-smart-mode? cfg))
+    (boolean? (:force-balance? cfg))
+    (boolean? (:show-open-file-dialog? cfg))
+    (set? (:file-extensions cfg))
+    (every? string? (:file-extensions cfg))
+    (valid-comment-chars? (:comment-chars cfg))))
+
+(set-validator! config valid-config-values?)
+
+(defn- warn [msg]
+  ;; FIXME: write this
+  (js/console.warn msg))
+
+(defmulti set-config-value!
+  (fn [config-key _new-value]
+    (if (contains? #{:use-smart-mode? :force-balance? :show-open-file-dialog?} config-key)
+      :boolean
+      config-key)))
+
+(defmethod set-config-value! :boolean
+  [cfg-key new-value]
+  (swap! config assoc cfg-key (boolean new-value)))
+
+(defmethod set-config-value! :file-extensions
+  [cfg-key new-value]
+  (swap! config assoc cfg-key (-> new-value js->clj set)))
+
+(defmethod set-config-value! :comment-chars
+  [cfg-key new-value]
+  (let [overrides-map (try
+                        (edn/read-string new-value)
+                        (catch js/Object _err nil))]
+    (cond
+      ;; FIXME: bad EDN
+      ;; FIXME: bad format
+      (valid-comment-chars? overrides-map) (swap! config assoc cfg-key overrides-map)
+      :else nil)))
+
+(defmethod set-config-value! :default
+  [cfg-key _new-value]
+  (warn (str "Unable to set value for unknown config key:" cfg-key)))
 
 
 (defn- observe-config!
@@ -95,7 +179,8 @@
   []
   (doseq [k (keys config-schema)]
     (ocall (oget js/atom "config") "observe" (config-key k)
-           #(swap! config assoc k %)))
+           (fn [new-value]
+             (set-config-value! k new-value))))
   (ocall (oget js/atom "config") "onDidChange" (config-key :use-smart-mode?)
          (fn [] (refresh-all-change-events!))))
 
@@ -105,6 +190,15 @@
   [filename]
   (and (string? filename)
        (some #(gstring/endsWith filename %) (:file-extensions @config))))
+
+
+(defn- get-comment-chars
+  "returns the commentChars option for a file extension
+  nil if there is no commentChars option"
+  [file-ext]
+  (or
+    (get (:comment-chars @config) file-ext)
+    (get file-ext->comment-chars file-ext)))
 
 
 ;; -----------------------------------------------------------------------------
@@ -120,7 +214,7 @@
          js/JSON.parse
          js->clj
          walk/keywordize-keys)
-    (catch js/Object e nil)))
+    (catch js/Object _err nil)))
 
 
 (defn- read-old-file-extensions []
@@ -136,7 +230,7 @@
               :else (conj v trimmed-line))))          ;; else add it
         []
         lines))
-    (catch js/Object e nil)))
+    (catch js/Object _err nil)))
 
 
 (defn- handle-old-config-files!
@@ -158,7 +252,7 @@
 ;; -----------------------------------------------------------------------------
 ;; Editor States Atom
 
-(def *editor-states
+(def editor-states
   "Keep track of all the editor tabs and their Parinfer states."
   (atom {}))
 
@@ -175,7 +269,7 @@
   (when-let [js-editor (ocall js/atom "workspace.getActiveTextEditor")]
     (when-let [id (oget js-editor "id")]
       {:editor-id id
-       :editor-state (get @*editor-states id)
+       :editor-state (get @editor-states id)
        :js-editor js-editor})))
 
 
@@ -252,7 +346,7 @@
       (update-status-bar! current-editor-state))))
 
 
-(add-watch *editor-states :status-bar toggle-status-bar!)
+(add-watch editor-states :status-bar toggle-status-bar!)
 
 
 ;; -----------------------------------------------------------------------------
@@ -290,7 +384,7 @@
         (set-status-class! js-editor current-state)))))
 
 
-(add-watch *editor-states :toggle-status-classes toggle-status-classes!)
+(add-watch editor-states :toggle-status-classes toggle-status-classes!)
 
 
 ;; -----------------------------------------------------------------------------
@@ -327,7 +421,7 @@
 
 
 (defn clear-error-markers
-  [js-editor start-row end-row js-error]
+  [js-editor start-row end-row _js-error]
   (let [markers (get-error-markers js-editor start-row end-row)
         ids (set (map #(oget % "id") markers))]
     (run! #(ocall % "destroy") markers)
@@ -394,13 +488,21 @@
     nil))
 
 
+(defn extname
+  "get file extension for file"
+  [f]
+  (ocall path "extname" f))
+
+
 (def previous-cursor (atom nil))
 (def monitor-cursor? (atom true))
 (def previous-tabstops (atom nil))
 
 
 (defn- apply-parinfer2 [js-editor mode js-atom-changes]
-  (let [current-txt (ocall js-editor "getText")
+  (let [file (ocall js-editor "getPath")
+        file-extension (extname file)
+        current-txt (ocall js-editor "getText")
         lines (util/split-lines current-txt)
         ;; add a newline at the end of the file if there is not one
         ;; https://github.com/oakmac/atom-parinfer/issues/12
@@ -432,6 +534,11 @@
 
                         "forceBalance" (:force-balance? @config)
                         "partialResult" false)
+
+        ;; add commentChars if needed
+        js-opts (if-let [comment-chars (get-comment-chars file-extension)]
+                  (oset! js-opts "commentChars" (clj->js comment-chars))
+                  js-opts)
 
         ;; save this cursor information for the next iteration
         ;; TODO: we need to clear the previous-cursor atom when changing parent expressions
@@ -712,7 +819,7 @@
   "Runs when an editor tab is closed."
   [js-editor]
   (when (and js-editor (oget js-editor "id"))
-    (swap! *editor-states dissoc (oget js-editor "id"))
+    (swap! editor-states dissoc (oget js-editor "id"))
     (remove-change-events! js-editor)))
 
 
@@ -753,10 +860,12 @@
   "Runs when an editor is opened."
   [js-editor]
   (let [editor-id (oget js-editor "id")
-        init-parinfer? (file-has-watched-extension? (ocall js-editor "getPath"))
+        file (ocall js-editor "getPath")
+        file-extension (extname file)
+        init-parinfer? (file-has-watched-extension? file)
         current-file (ocall js-editor "getTitle")]
     ;; add this editor state to our atom
-    (swap! *editor-states assoc editor-id :disabled)
+    (swap! editor-states assoc editor-id :disabled)
 
     ;; listen to the buffer and editor change events
     (add-change-events! js-editor)
@@ -766,9 +875,13 @@
 
     ;; run Paren Mode on the file if we recognize the extension.
     (when init-parinfer?
-      (let [show-open-file-dialog? (true? (:show-open-file-dialog? @config))
+      (let [show-open-file-dialog? (:show-open-file-dialog? @config)
             current-text (ocall js-editor "getText")
-            js-paren-mode-result (ocall parinfer "parenMode" current-text)
+            ;; add commentChars option if needed
+            js-opts (if-let [comment-chars (get-comment-chars file-extension)]
+                      (js-obj "commentChars" (clj->js comment-chars))
+                      nil)
+            js-paren-mode-result (ocall parinfer "parenMode" current-text js-opts)
             paren-mode-succeeded? (true? (oget js-paren-mode-result "success"))
             paren-mode-text (oget js-paren-mode-result "text")
             text-delta (util/lines-diff current-text paren-mode-text)
@@ -781,12 +894,12 @@
           (ocall js/atom "confirm"
             (js-obj "message" (str current-file " has unbalanced parens")
                     "detailedMessage" (paren-mode-failed-msg current-file)
-                    "buttons" (js-obj "Ok" #(swap! *editor-states assoc editor-id :paren-mode))))
+                    "buttons" (js-obj "Ok" #(swap! editor-states assoc editor-id :paren-mode))))
 
           ;; Paren Mode failed and they do not want to see the dialog.
           ;; Drop them into Paren Mode silently to fix the problem.
           (and (not paren-mode-succeeded?) (not show-open-file-dialog?))
-          (swap! *editor-states assoc editor-id :paren-mode)
+          (swap! editor-states assoc editor-id :paren-mode)
 
           ;; Paren Mode changed the file and they want to see the dialog.
           ;; Inform them of the change and then drop into Indent Mode if they click "Yes".
@@ -796,7 +909,7 @@
                     "detailedMessage" (confirm-paren-mode-msg current-file (:diff text-delta))
                     "buttons" (js-obj "Yes" (fn []
                                               (ocall js-editor "setText" paren-mode-text)
-                                              (swap! *editor-states assoc editor-id :indent-mode))
+                                              (swap! editor-states assoc editor-id :indent-mode))
                                       ;; do nothing if they click "No"
                                       "No" util/always-nil)))
 
@@ -804,34 +917,34 @@
           ;; Update the file and drop them into Indent Mode silently.
           (and paren-mode-changed-the-file? (not show-open-file-dialog?))
           (do (ocall js-editor "setText" paren-mode-text)
-              (swap! *editor-states assoc editor-id :indent-mode))
+              (swap! editor-states assoc editor-id :indent-mode))
 
           ;; Paren Mode succeeded and the file was unchanged.
           ;; Drop them into Indent Mode silently.
           ;; NOTE: this is the most likely case for someone using Parinfer regularly
           :else
-          (swap! *editor-states assoc editor-id :indent-mode))))))
+          (swap! editor-states assoc editor-id :indent-mode))))))
 
 
 (defn- pane-changed
   "Runs when the user changes their pane focus.
    ie: switches editor tabs"
-  [item]
+  [_item]
   ;; update the status bar
-  (swap! *editor-states identity))
+  (swap! editor-states identity))
 
 
 (defn- disable! []
   (when-let [{:keys [editor-id]} (get-active-editor)]
-    (swap! *editor-states assoc editor-id :disabled)))
+    (swap! editor-states assoc editor-id :disabled)))
 
 
 (defn- toggle-mode! []
   (let [{:keys [editor-id editor-state]} (get-active-editor)]
     (when editor-state
       (if (= editor-state :indent-mode)
-        (swap! *editor-states assoc editor-id :paren-mode)
-        (swap! *editor-states assoc editor-id :indent-mode))
+        (swap! editor-states assoc editor-id :paren-mode)
+        (swap! editor-states assoc editor-id :indent-mode))
       ;; run parinfer in their new mode
       (on-change-cursor-position nil))))
 
@@ -847,41 +960,42 @@
 ;; -----------------------------------------------------------------------------
 ;; Package-required events
 
-(defn- activate [_state]
-  (util/js-log (str "atom-parinfer v" version " activated"))
+(def init!
+  (gfunctions/once
+    (fn [_state]
+      (util/js-log (str "atom-parinfer v" version " activated"))
 
-  (observe-config!)
-  (try
-    (handle-old-config-files!)
-    (catch js/Object e nil))
+      (observe-config!)
+      (try
+        (handle-old-config-files!)
+        (catch js/Object _err nil))
 
-  (ocall js/atom "workspace.observeTextEditors" hello-editor)
-  (ocall js/atom "workspace.onDidChangeActivePaneItem" pane-changed)
+      (ocall js/atom "workspace.observeTextEditors" hello-editor)
+      (ocall js/atom "workspace.onDidChangeActivePaneItem" pane-changed)
 
-  ;; add package events
-  (ocall js/atom "commands.add" "atom-workspace"
-    (js-obj "parinfer:disable" disable!
-            "parinfer:toggle-mode" toggle-mode!))
-  (ocall js/atom "commands.add" "atom-text-editor"
-    (js-obj "parinfer:next-tab-stop" #(next-tab-stop! % 1)
-            "parinfer:prev-tab-stop" #(next-tab-stop! % -1)))
+      ;; add package events
+      (ocall js/atom "commands.add" "atom-workspace"
+        (js-obj "parinfer:disable" disable!
+                "parinfer:toggle-mode" toggle-mode!))
+      (ocall js/atom "commands.add" "atom-text-editor"
+        (js-obj "parinfer:next-tab-stop" #(next-tab-stop! % 1)
+                "parinfer:prev-tab-stop" #(next-tab-stop! % -1)))
 
-  ;; Sometimes the editor events can all load before Atom catches up with the DOM
-  ;; resulting in an initial empty status bar.
-  ;; These calls help with that and it doesn't hurt anything to call them extra.
-  ;; TODO: figure out if there is an actual Atom event instead of this hackery
-  (js/setTimeout pane-changed 100)
-  (js/setTimeout pane-changed 500)
-  (js/setTimeout pane-changed 1000)
-  (js/setTimeout pane-changed 2000)
-  (js/setTimeout pane-changed 5000))
-
+      ;; Sometimes the editor events can all load before Atom catches up with the DOM
+      ;; resulting in an initial empty status bar.
+      ;; These calls help with that and it doesn't hurt anything to call them extra.
+      ;; TODO: figure out if there is an actual Atom event instead of this hackery
+      (js/setTimeout pane-changed 100)
+      (js/setTimeout pane-changed 500)
+      (js/setTimeout pane-changed 1000)
+      (js/setTimeout pane-changed 2000)
+      (js/setTimeout pane-changed 5000))))
 
 ;; -----------------------------------------------------------------------------
 ;; Module Export (required for Atom package)
 
 (oset! js/module "exports"
-  (js-obj "activate" activate
+  (js-obj "activate" init!
           "config" (clj->js config-schema)
           "deactivate" util/always-nil
           "serialize" util/always-nil))
