@@ -1,3 +1,13 @@
+## 1.24.0 - 2020-09-07
+* Add configurable comment character. Thank you [@swlkr] for [PR #106]!
+* Update to parinfer.js v3.13.0 (@oakmac fork)
+* Change default for Smart Mode to "on". Remove "experimental" language.
+* Bump project dependencies to latest
+* Add Fennel (`.fnl`) and Janet (`.janet`) to default file extensions
+
+[@swlkr]:https://github.com/swlkr
+[PR #106]:https://github.com/oakmac/atom-parinfer/pull/106
+
 ## 1.23.0 - 2018-07-03
 * Remove `TextBuffer.setTextInRange` depreciation warning. [Issue #101]
 * Bump ClojureScript version to 1.10.339

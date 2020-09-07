@@ -3,55 +3,50 @@
     [goog.dom :as gdom]
     [oops.core :refer [ocall]]))
 
-
-;;------------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;; Logging
-;;------------------------------------------------------------------------------
 
 (defn js-log
   "Logs a JavaScript thing."
   [js-thing]
   (ocall js/console "log" js-thing))
 
-
 (defn log
   "Logs a Clojure thing."
   [clj-thing]
   (js-log (pr-str clj-thing)))
 
-
-(defn log-atom-changes [atm kwd old-value new-value]
+(defn log-atom-changes [_atm _kwd old-value new-value]
   (log old-value)
   (log new-value)
   (js-log "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"))
 
+(defn warn
+  ([msg]
+   (ocall js/console "warn" msg))
+  ([msg1 msg2]
+   (ocall js/console "warn" msg1 msg2)))
 
-;;------------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;; DOM
-;;------------------------------------------------------------------------------
 
 (defn by-id [id]
   (ocall js/document "getElementById" id))
 
-
 (defn qs [selector]
   (ocall js/document "querySelector" selector))
-
 
 (defn remove-el! [el]
   (gdom/removeNode el))
 
-
-;;------------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;; String
-;;------------------------------------------------------------------------------
 
 (defn split-lines
   "Same as clojure.string/split-lines, except it doesn't remove empty lines at
   the end of the text."
   [text]
   (vec (.split text #"\r?\n")))
-
 
 (defn lines-diff
   "Returns a map {:diff X, :same Y} of the difference in lines between two texts.
@@ -68,13 +63,10 @@
             initial-count
             v-both)))
 
-
-;;------------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;; Misc
-;;------------------------------------------------------------------------------
 
 (defn one? [x]
   (= 1 x))
-
 
 (def always-nil (constantly nil))
