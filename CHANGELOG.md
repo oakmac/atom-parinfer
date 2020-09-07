@@ -3,6 +3,7 @@
 * Update to parinfer.js v3.13.0 (@oakmac fork)
 * Change default for Smart Mode to "on". Remove "experimental" language.
 * Bump project dependencies to latest
+* Add Fennel (`.fnl`) and Janet (`.janet`) to default file extensions
 
 [@swlkr]:https://github.com/swlkr
 [PR #106]:https://github.com/oakmac/atom-parinfer/pull/106
