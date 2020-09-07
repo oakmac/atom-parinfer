@@ -9,23 +9,23 @@
     [goog.string :as gstring]
     [oops.core :refer [ocall oget oset!]]))
 
+(declare
+  on-change-cursor-position
+  on-did-change-text
+  refresh-all-change-events!
+  toggle-mode!)
 
-(declare toggle-mode!)
-
-
-;;------------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;; JS Requires
-;;------------------------------------------------------------------------------
 
 (def fs       (js/require "fs-plus"))
+(def parinfer (js/require "@chrisoakman/parinfer"))
 (def package  (js/require "../package.json"))
-(def parinfer (js/require "parinfer"))
 
 (def version (oget package "version"))
 
-;;------------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;; Config
-;;------------------------------------------------------------------------------
 
 (def default-file-extensions
   [".clj"  ;; Clojure
@@ -90,9 +90,6 @@
   (atom {}))
 
 
-(declare refresh-all-change-events!)
-
-
 (defn- observe-config!
   "Initialize config values and keep up with changes made from the UI."
   []
@@ -110,9 +107,8 @@
        (some #(gstring/endsWith filename %) (:file-extensions @config))))
 
 
-;;------------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;; Old Config
-;;------------------------------------------------------------------------------
 
 (def old-config-file (str (ocall fs "getHomeDirectory") "/.atom-parinfer-config.json"))
 (def old-file-extension-file (str (ocall fs "getHomeDirectory") "/.parinfer-file-extensions.txt"))
@@ -159,18 +155,16 @@
     (ocall fs "unlink" old-file-extension-file)))
 
 
-;;------------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;; Editor States Atom
-;;------------------------------------------------------------------------------
 
 (def *editor-states
   "Keep track of all the editor tabs and their Parinfer states."
   (atom {}))
 
 
-;;------------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;; Get Editor State
-;;------------------------------------------------------------------------------
 
 (def autocomplete-el-selector "atom-text-editor.is-focused.autocomplete-active")
 
@@ -185,9 +179,8 @@
        :js-editor js-editor})))
 
 
-;;------------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;; Status Bar
-;;------------------------------------------------------------------------------
 
 (def status-el-id (str (random-uuid)))
 (def status-el-classname "inline-block parinfer-notification-c7a5b")
@@ -249,9 +242,8 @@
         (oset! status-el "innerHTML" (link-text new-state))))))
 
 
-;;------------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;; Update Status Bar
-;;------------------------------------------------------------------------------
 
 (defn- toggle-status-bar! [_atm _kwd _old-states new-states]
   (let [{:keys [editor-id]} (get-active-editor)
@@ -263,9 +255,8 @@
 (add-watch *editor-states :status-bar toggle-status-bar!)
 
 
-;;------------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;; Set Status Classes
-;;------------------------------------------------------------------------------
 
 (def indent-mode-class "indent-mode-76f60")
 (def paren-mode-class "paren-mode-f2763")
@@ -302,9 +293,8 @@
 (add-watch *editor-states :toggle-status-classes toggle-status-classes!)
 
 
-;;------------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;; Error Markers
-;;------------------------------------------------------------------------------
 
 (def error-marker-class "parinfer-error-marker-778ea")
 (def error-marker-ids (atom #{}))
@@ -344,9 +334,8 @@
     (swap! error-marker-ids set/difference ids)))
 
 
-;;------------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;; Apply Parinfer
-;;------------------------------------------------------------------------------
 
 ;; NOTE: this is the "parent expression" hack
 ;; https://github.com/oakmac/atom-parinfer/issues/9
@@ -532,9 +521,8 @@
 (def debounce-interval-ms 20)
 (def debounced-apply-parinfer (gfunctions/debounce apply-parinfer! debounce-interval-ms))
 
-;;------------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;; Tab Stops
-;;------------------------------------------------------------------------------
 
 (def paren->spaces
   "We insert extra tab stops according to the type of open-paren."
@@ -685,17 +673,13 @@
         (tab-at-cursor js-editor (first cursors) dx stops)))))
 
 
-;;------------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;; Atom Events
-;------------------------------------------------------------------------------
 
 (def change-subscriptions
   "Editor id -> list of subscriptions for `.dispose`ing"
   (atom {}))
 
-
-(declare on-did-change-text)
-(declare on-change-cursor-position)
 
 (defn- add-change-events! [js-editor]
   (when (and js-editor (oget js-editor "id"))
@@ -860,9 +844,8 @@
       (ocall e "abortKeyBinding"))))
 
 
-;;------------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;; Package-required events
-;;------------------------------------------------------------------------------
 
 (defn- activate [_state]
   (util/js-log (str "atom-parinfer v" version " activated"))
@@ -894,9 +877,8 @@
   (js/setTimeout pane-changed 5000))
 
 
-;;------------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 ;; Module Export (required for Atom package)
-;;------------------------------------------------------------------------------
 
 (oset! js/module "exports"
   (js-obj "activate" activate
